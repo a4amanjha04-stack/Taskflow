@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="theme-color"
+        content="#6366f1"
+    >
+
+    <link
+    rel="manifest"
+    href="manifest.json"
+>
+
+<meta
+    name="mobile-web-app-capable"
+    content="yes"
+>
+
+<meta
+    name="apple-mobile-web-app-capable"
+    content="yes"
+>
+
+<meta
+    name="apple-mobile-web-app-status-bar-style"
+    content="default"
+>
+
+<meta
+    name="apple-mobile-web-app-title"
+    content="TaskFlow"
+>
+
+    <title>TaskFlow</title>
+
+    <link rel="stylesheet" href="style.css">
+
+</head>
+
+
+<body>
+
+<div class="app-shell">
+
+
+    <!-- ============================= -->
+    <!-- MAIN APPLICATION -->
+    <!-- ============================= -->
+
+    <main class="main-content">
+
+
+        <!-- ============================= -->
+        <!-- TODAY PAGE -->
+        <!-- ============================= -->
+
+        <section
+            id="todayPage"
+            class="page active-page"
+        >
+
+
+            <!-- Header -->
+
+            <header class="top-header">
+
+                <div>
+
+                    <p
+                        id="greeting"
+                        class="greeting"
+                    >
+                        Good evening
+                    </p>
+
+                    <h1>
+                        Today's Tasks
+                    </h1>
+
+                    <p
+                        id="currentDate"
+                        class="date-text"
+                    ></p>
+
+                </div>
+
+
+                <button
+                    id="themeButton"
+                    class="icon-button"
+                    aria-label="Toggle theme"
+                >
+                    🌙
+                </button>
+
+            </header>
+
+
+
+            <!-- ============================= -->
+            <!-- PROGRESS CARD -->
+            <!-- ============================= -->
+
+            <section class="progress-card">
+
+
+                <div class="progress-card-top">
+
+                    <div>
+
+                        <p class="card-label">
+                            Today's Progress
+                        </p>
+
+                        <h2
+                            id="progressPercentage"
+                            class="progress-number"
+                        >
+                            0%
+                        </h2>
+
+                    </div>
+
+
+                    <div class="progress-circle">
+
+                        <span id="progressCircleText">
+                            0%
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="progress-track">
+
+                    <div
+                        id="progressFill"
+                        class="progress-fill"
+                    ></div>
+
+                </div>
+
+
+                <div class="progress-summary">
+
+                    <span id="completedSummary">
+                        0 completed
+                    </span>
+
+                    <span id="pendingSummary">
+                        0 remaining
+                    </span>
+
+                </div>
+
+            </section>
+
+
+
+            <!-- ============================= -->
+            <!-- STREAK CARD -->
+            <!-- ============================= -->
+
+            <section class="streak-card">
+
+                <div class="streak-icon">
+                    🔥
+                </div>
+
+                <div>
+
+                    <p class="streak-label">
+                        Current Streak
+                    </p>
+
+                    <h3>
+                        <span id="streakCount">
+                            0
+                        </span>
+                        days
+                    </h3>
+
+                </div>
+
+                <div class="streak-message">
+                    Keep going!
+                </div>
+
+            </section>
+
+
+
+            <!-- ============================= -->
+            <!-- TASK SECTION -->
+            <!-- ============================= -->
+
+            <section class="tasks-section">
+
+
+                <div class="section-heading">
+
+                    <div>
+
+                        <h2>
+                            Your Tasks
+                        </h2>
+
+                        <p id="taskCount">
+                            0 tasks
+                        </p>
+
+                    </div>
+
+
+                    <button
+                        id="addTaskButton"
+                        class="add-button"
+                    >
+
+                        <span class="plus">
+                            +
+                        </span>
+
+                        Add Task
+
+                    </button>
+
+                </div>
+
+
+
+                <!-- Task List -->
+
+                <div
+                    id="taskList"
+                    class="task-list"
+                >
+
+                    <div class="empty-state">
+
+                        <div class="empty-icon">
+                            ✓
+                        </div>
+
+                        <h3>
+                            No tasks yet
+                        </h3>
+
+                        <p>
+                            Start your day by adding your
+                            first task.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+            </section>
+
+
+        </section>
+
+
+
+        <!-- ============================= -->
+        <!-- STATISTICS PAGE -->
+        <!-- ============================= -->
+
+       <section
+    id="statsPage"
+    class="page"
+>
+
+    <header class="page-header">
+
+        <div>
+
+            <p class="page-eyebrow">
+                INSIGHTS
+            </p>
+
+            <h1>
+                Statistics
+            </h1>
+
+            <p>
+                Your productivity at a glance.
+            </p>
+
+        </div>
+
+    </header>
+
+
+    <!-- ============================= -->
+    <!-- TODAY OVERVIEW -->
+    <!-- ============================= -->
+
+    <section class="stats-overview">
+
+        <div class="stats-overview-header">
+
+            <div>
+
+                <span class="stats-label">
+                    TODAY
+                </span>
+
+                <h2 id="statsTodayPercentage">
+                    0%
+                </h2>
+
+                <p id="statsTodayText">
+                    No tasks yet
+                </p>
+
+            </div>
+
+            <div class="stats-mini-icon">
+                🎯
+            </div>
+
+        </div>
+
+
+        <div class="today-chart-wrapper">
+
+            <canvas
+                id="todayChart"
+                role="img"
+                aria-label="Today's completed versus pending tasks"
+            ></canvas>
+
+        </div>
+
+    </section>
+
+
+    <!-- ============================= -->
+    <!-- QUICK STATS -->
+    <!-- ============================= -->
+
+    <section class="stats-grid">
+
+
+        <div class="stat-box">
+
+            <span class="stat-box-icon">
+                ✅
+            </span>
+
+            <span class="stat-box-label">
+                Completed
+            </span>
+
+            <strong id="statsCompleted">
+                0
+            </strong>
+
+        </div>
+
+
+        <div class="stat-box">
+
+            <span class="stat-box-icon">
+                📝
+            </span>
+
+            <span class="stat-box-label">
+                Total Tasks
+            </span>
+
+            <strong id="statsTotal">
+                0
+            </strong>
+
+        </div>
+
+
+        <div class="stat-box">
+
+            <span class="stat-box-icon">
+                🔥
+            </span>
+
+            <span class="stat-box-label">
+                Current Streak
+            </span>
+
+            <strong id="statsCurrentStreak">
+                0
+            </strong>
+
+        </div>
+
+
+        <div class="stat-box">
+
+            <span class="stat-box-icon">
+                🏆
+            </span>
+
+            <span class="stat-box-label">
+                Longest Streak
+            </span>
+
+            <strong id="statsLongestStreak">
+                0
+            </strong>
+
+        </div>
+
+
+    </section>
+
+
+    <!-- ============================= -->
+    <!-- WEEKLY CHART -->
+    <!-- ============================= -->
+
+    <section class="chart-card">
+
+        <div class="chart-card-header">
+
+            <div>
+
+                <span class="stats-label">
+                    LAST 7 DAYS
+                </span>
+
+                <h2>
+                    Weekly Progress
+                </h2>
+
+            </div>
+
+            <span
+                id="weeklyPercentage"
+                class="chart-percentage"
+            >
+                0%
+            </span>
+
+        </div>
+
+
+        <div class="chart-container">
+
+            <canvas
+                id="weeklyChart"
+                role="img"
+                aria-label="Weekly task completion chart"
+            ></canvas>
+
+        </div>
+
+    </section>
+
+
+    <!-- ============================= -->
+    <!-- MONTHLY CHART -->
+    <!-- ============================= -->
+
+    <section class="chart-card">
+
+        <div class="chart-card-header">
+
+            <div>
+
+                <span class="stats-label">
+                    LAST 30 DAYS
+                </span>
+
+                <h2>
+                    Monthly Activity
+                </h2>
+
+            </div>
+
+            <span
+                id="monthlyPercentage"
+                class="chart-percentage"
+            >
+                0%
+            </span>
+
+        </div>
+
+
+        <div class="chart-container monthly">
+
+            <canvas
+                id="monthlyChart"
+                role="img"
+                aria-label="Monthly task completion chart"
+            ></canvas>
+
+        </div>
+
+    </section>
+
+
+    <!-- ============================= -->
+    <!-- PRODUCTIVITY SCORE -->
+    <!-- ============================= -->
+
+    <section class="productivity-score-card">
+
+        <div>
+
+            <span class="stats-label">
+                PRODUCTIVITY SCORE
+            </span>
+
+            <h2>
+                <span id="productivityScore">
+                    0
+                </span>
+                <small>/ 100</small>
+            </h2>
+
+            <p id="productivityMessage">
+                Start completing tasks to build your score.
+            </p>
+
+        </div>
+
+
+        <div class="score-circle">
+
+            <span id="scoreCircle">
+                0
+            </span>
+
+        </div>
+
+    </section>
+
+
+</section>
+
+      
+<section
+    id="historyPage"
+    class="page"
+>
+
+    <header class="page-header">
+
+        <div>
+
+            <p class="page-eyebrow">
+                YOUR JOURNEY
+            </p>
+
+            <h1>
+                History
+            </h1>
+
+            <p>
+                Look back at your productivity.
+            </p>
+
+        </div>
+
+    </header>
+
+
+    <!-- ============================= -->
+    <!-- CALENDAR -->
+    <!-- ============================= -->
+
+    <section class="history-calendar-card">
+
+
+        <div class="history-calendar-header">
+
+            <button
+                id="historyPrevious"
+                class="calendar-nav-button"
+            >
+                ‹
+            </button>
+
+
+            <div>
+
+                <h2 id="historyMonthTitle">
+                    August 2026
+                </h2>
+
+            </div>
+
+
+            <button
+                id="historyNext"
+                class="calendar-nav-button"
+            >
+                ›
+            </button>
+
+        </div>
+
+
+        <button
+            id="historyToday"
+            class="today-button"
+        >
+            Go to Today
+        </button>
+
+
+        <div class="calendar-weekdays">
+
+            <span>Sun</span>
+            <span>Mon</span>
+            <span>Tue</span>
+            <span>Wed</span>
+            <span>Thu</span>
+            <span>Fri</span>
+            <span>Sat</span>
+
+        </div>
+
+
+        <div
+            id="historyCalendar"
+            class="history-calendar"
+        ></div>
+
+
+        <div class="calendar-legend">
+
+            <span>
+                Less
+            </span>
+
+            <i class="legend-box productivity-low"></i>
+
+            <i class="legend-box productivity-medium"></i>
+
+            <i class="legend-box productivity-high"></i>
+
+            <i class="legend-box productivity-100"></i>
+
+            <span>
+                More
+            </span>
+
+        </div>
+
+    </section>
+
+
+    <!-- ============================= -->
+    <!-- SELECTED DAY -->
+    <!-- ============================= -->
+
+    <section class="history-day-card">
+
+
+        <div class="history-day-header">
+
+            <div>
+
+                <span class="stats-label">
+                    SELECTED DAY
+                </span>
+
+                <h2 id="historySelectedDate">
+                    Today
+                </h2>
+
+            </div>
+
+
+            <div class="history-day-percentage">
+
+                <strong
+                    id="historyPercentage"
+                >
+                    0%
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <div class="history-summary">
+
+            <div>
+
+                <span>
+                    Completed
+                </span>
+
+                <strong id="historyCompleted">
+                    0
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    Pending
+                </span>
+
+                <strong id="historyPending">
+                    0
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <div
+            id="historyTaskList"
+            class="history-task-list"
+        ></div>
+
+
+    </section>
+
+</section>
+
+
+
+
+
+
+        <!-- ============================= -->
+        <!-- SETTINGS PAGE -->
+        <!-- ============================= -->
+
+        <section
+            id="settingsPage"
+            class="page"
+        >
+
+            <header class="page-header">
+
+                <div>
+
+                    <p class="page-eyebrow">
+                        PREFERENCES
+                    </p>
+
+                    <h1>
+                        Settings
+                    </h1>
+
+                    <p>
+                        Customize your TaskFlow experience.
+                    </p>
+
+                </div>
+
+            </header>
+
+
+            <div class="settings-list">
+
+
+                <div class="setting-item">
+
+                    <div class="setting-icon">
+                        🌙
+                    </div>
+
+                    <div class="setting-info">
+
+                        <strong>
+                            Dark Mode
+                        </strong>
+
+                        <span>
+                            Easier on your eyes at night
+                        </span>
+
+                    </div>
+
+                    <button
+                        id="settingsThemeButton"
+                        class="toggle-button"
+                    >
+
+                        <span></span>
+
+                    </button>
+
+                </div>
+
+
+
+                <div class="setting-item">
+
+                    <div class="setting-icon">
+                        💾
+                    </div>
+
+                    <div class="setting-info">
+
+                        <strong>
+                            Local Storage
+                        </strong>
+
+                        <span>
+                            Your data stays on this device
+                        </span>
+
+                    </div>
+
+                    <span class="status-badge">
+                        Active
+                    </span>
+
+                </div>
+
+
+            </div>
+
+        </section>
+
+
+    </main>
+
+
+
+    <!-- ============================= -->
+    <!-- BOTTOM NAVIGATION -->
+    <!-- ============================= -->
+
+    <nav class="bottom-navigation">
+
+
+        <button
+            class="nav-item active"
+            data-page="todayPage"
+        >
+
+            <span class="nav-icon">
+                🏠
+            </span>
+
+            <span>
+                Today
+            </span>
+
+        </button>
+
+
+
+        <button
+            class="nav-item"
+            data-page="statsPage"
+        >
+
+            <span class="nav-icon">
+                📊
+            </span>
+
+            <span>
+                Stats
+            </span>
+
+        </button>
+
+
+
+        <button
+            class="nav-item"
+            data-page="historyPage"
+        >
+
+            <span class="nav-icon">
+                📅
+            </span>
+
+            <span>
+                History
+            </span>
+
+        </button>
+
+
+
+        <button
+            class="nav-item"
+            data-page="settingsPage"
+        >
+
+            <span class="nav-icon">
+                ⚙️
+            </span>
+
+            <span>
+                Settings
+            </span>
+
+        </button>
+
+
+    </nav>
+
+</div>
+
+
+
+<!-- ============================= -->
+<!-- ADD / EDIT TASK MODAL -->
+<!-- ============================= -->
+
+<div
+    id="taskModal"
+    class="modal hidden"
+>
+
+    <div class="modal-content">
+
+
+        <div class="modal-header">
+
+            <div>
+
+                <p class="modal-eyebrow">
+                    TASK
+                </p>
+
+                <h2 id="modalTitle">
+                    Add Task
+                </h2>
+
+            </div>
+
+
+            <button
+                id="closeModal"
+                class="modal-close"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+
+        <label for="taskInput">
+            What do you need to accomplish?
+        </label>
+
+
+        <input
+            id="taskInput"
+            type="text"
+            maxlength="100"
+            autocomplete="off"
+            placeholder="e.g. Study DevOps for 1 hour"
+        >
+        <div class="repeat-field">
+
+    <label for="repeatSelect">
+        Repeat
+    </label>
+
+    <select
+        id="repeatSelect"
+    >
+
+        <option value="none">
+            Never
+        </option>
+
+        <option value="daily">
+            Every day
+        </option>
+
+        <option value="weekdays">
+            Weekdays
+        </option>
+
+        <option value="weekly">
+            Every week
+        </option>
+
+    </select>
+
+</div>
+
+
+        <div class="character-count">
+            <span id="characterCount">
+                0
+            </span>
+            / 100
+        </div>
+
+
+        <div class="modal-actions">
+
+            <button
+                id="cancelTask"
+                class="secondary-button"
+            >
+                Cancel
+            </button>
+
+
+            <button
+                id="saveTask"
+                class="primary-button"
+            >
+                Add Task
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- ============================= -->
+<!-- DELETE CONFIRMATION MODAL -->
+<!-- ============================= -->
+
+<div
+    id="deleteModal"
+    class="modal hidden"
+>
+
+    <div class="modal-content small-modal">
+
+        <div class="delete-icon">
+            🗑️
+        </div>
+
+        <h2>
+            Delete this task?
+        </h2>
+
+        <p>
+            This action cannot be undone.
+        </p>
+
+
+        <div class="modal-actions">
+
+            <button
+                id="cancelDelete"
+                class="secondary-button"
+            >
+                Cancel
+            </button>
+
+
+            <button
+                id="confirmDelete"
+                class="danger-button"
+            >
+                Delete
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- DATABASE -->
+<script src="js/database.js"></script>
+<script src="js/tasks.js"></script>
+<script src="js/statistics.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script src="js/charts.js"></script>
+
+<script src="js/history.js"></script>
+
+<script src="app.js"></script>
+
+
+</body>
+
+</html>

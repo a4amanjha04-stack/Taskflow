@@ -1,0 +1,23 @@
+{
+    "name": "TaskFlow",
+    "short_name": "TaskFlow",
+    "description": "A simple personal daily task and productivity tracker.",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#f8fafc",
+    "theme_color": "#6366f1",
+    "orientation": "portrait",
+    "scope": "./",
+    "icons": [
+        {
+            "src": "icons/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}
