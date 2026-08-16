@@ -25,10 +25,14 @@ const saveTask =
 const taskInput =
     document.getElementById("taskInput");
 
+const taskDate =
+    document.getElementById("taskDate");
+
+const customTaskDate =
+    document.getElementById("customTaskDate");
+
 const repeatSelect =
-    document.getElementById(
-        "repeatSelect"
-    );
+    document.getElementById("repeatSelect");
 
 const taskList =
     document.getElementById("taskList");
@@ -183,6 +187,204 @@ function updateGreeting() {
             "Good evening 🌙";
 
     }
+
+}
+
+
+// ============================================================
+// DATE HELPERS
+// ============================================================
+
+function formatTaskDate(date) {
+
+    const year =
+        date.getFullYear();
+
+
+    const month =
+        String(
+            date.getMonth() + 1
+        ).padStart(
+            2,
+            "0"
+        );
+
+
+    const day =
+        String(
+            date.getDate()
+        ).padStart(
+            2,
+            "0"
+        );
+
+
+    return `${year}-${month}-${day}`;
+
+}
+
+
+function getTodayDateValue() {
+
+    return formatTaskDate(
+        new Date()
+    );
+
+}
+
+
+function getTomorrowDateValue() {
+
+    const tomorrow =
+        new Date();
+
+
+    tomorrow.setDate(
+        tomorrow.getDate() + 1
+    );
+
+
+    return formatTaskDate(
+        tomorrow
+    );
+
+}
+
+
+// ============================================================
+// TASK DATE SELECTION
+// ============================================================
+
+function getTaskDateValue() {
+
+    if (!taskDate) {
+
+        return getTodayDateValue();
+
+    }
+
+
+    // ----------------------------
+    // TODAY
+    // ----------------------------
+
+    if (
+        taskDate.value === "today"
+    ) {
+
+        return getTodayDateValue();
+
+    }
+
+
+    // ----------------------------
+    // TOMORROW
+    // ----------------------------
+
+    if (
+        taskDate.value === "tomorrow"
+    ) {
+
+        return getTomorrowDateValue();
+
+    }
+
+
+    // ----------------------------
+    // CUSTOM DATE
+    // ----------------------------
+
+    if (
+        taskDate.value === "custom"
+    ) {
+
+        if (
+            !customTaskDate ||
+            !customTaskDate.value
+        ) {
+
+            throw new Error(
+                "Please choose a date."
+            );
+
+        }
+
+
+        return customTaskDate.value;
+
+    }
+
+
+    // ----------------------------
+    // DEFAULT
+    // ----------------------------
+
+    return getTodayDateValue();
+
+}
+
+
+// ============================================================
+// CUSTOM DATE PICKER
+// ============================================================
+
+if (taskDate) {
+
+    taskDate.addEventListener(
+        "change",
+        function() {
+
+            if (
+                taskDate.value === "custom"
+            ) {
+
+                if (customTaskDate) {
+
+                    customTaskDate.classList.remove(
+                        "hidden"
+                    );
+
+
+                    // Don't allow dates
+                    // before tomorrow.
+
+                    customTaskDate.min =
+                        getTomorrowDateValue();
+
+
+                    // Automatically select
+                    // tomorrow if no date
+                    // has been selected.
+
+                    if (
+                        !customTaskDate.value
+                    ) {
+
+                        customTaskDate.value =
+                            getTomorrowDateValue();
+
+                    }
+
+                }
+
+            }
+
+            else {
+
+                if (customTaskDate) {
+
+                    customTaskDate.classList.add(
+                        "hidden"
+                    );
+
+                    customTaskDate.value = "";
+
+                }
+
+            }
+
+        }
+    );
 
 }
 
@@ -369,6 +571,29 @@ function loadTheme() {
 // MODAL
 // ============================================================
 
+function resetTaskDateFields() {
+
+    if (taskDate) {
+
+        taskDate.value =
+            "today";
+
+    }
+
+
+    if (customTaskDate) {
+
+        customTaskDate.value = "";
+
+        customTaskDate.classList.add(
+            "hidden"
+        );
+
+    }
+
+}
+
+
 function openAddTaskModal() {
 
     editingTaskId = null;
@@ -380,6 +605,8 @@ function openAddTaskModal() {
         "Add Task";
 
     taskInput.value = "";
+
+    resetTaskDateFields();
 
     repeatSelect.value =
         "none";
@@ -417,8 +644,98 @@ function openEditTaskModal(task) {
     taskInput.value =
         task.title;
 
+
+    // ========================================================
+    // LOAD EXISTING TASK DATE
+    // ========================================================
+
+    if (
+        taskDate &&
+        task.date
+    ) {
+
+        const today =
+            getTodayDateValue();
+
+        const tomorrow =
+            getTomorrowDateValue();
+
+
+        if (
+            task.date === today
+        ) {
+
+            taskDate.value =
+                "today";
+
+            if (customTaskDate) {
+
+                customTaskDate.value = "";
+
+                customTaskDate.classList.add(
+                    "hidden"
+                );
+
+            }
+
+        }
+
+        else if (
+            task.date === tomorrow
+        ) {
+
+            taskDate.value =
+                "tomorrow";
+
+            if (customTaskDate) {
+
+                customTaskDate.value = "";
+
+                customTaskDate.classList.add(
+                    "hidden"
+                );
+
+            }
+
+        }
+
+        else {
+
+            taskDate.value =
+                "custom";
+
+
+            if (customTaskDate) {
+
+                customTaskDate.classList.remove(
+                    "hidden"
+                );
+
+                customTaskDate.min =
+                    tomorrow;
+
+                customTaskDate.value =
+                    task.date;
+
+            }
+
+        }
+
+    }
+
+    else {
+
+        resetTaskDateFields();
+
+    }
+
+
+    // Editing a task should
+    // not automatically create
+    // another recurring task.
+
     repeatSelect.value =
-    "none";
+        "none";
 
     updateCharacterCount();
 
@@ -448,6 +765,8 @@ function closeTaskModal() {
     );
 
     taskInput.value = "";
+
+    resetTaskDateFields();
 
     repeatSelect.value =
         "none";
@@ -534,51 +853,87 @@ async function saveTaskHandler() {
             true;
 
 
-        if (editingTaskId !== null) {
+        // ====================================================
+        // SELECT DATE
+        // ====================================================
 
-    await editTask(
-        editingTaskId,
-        title
-    );
-
-}
-
-else {
-
-    const frequency =
-        repeatSelect.value;
+        const selectedDate =
+            getTaskDateValue();
 
 
-    if (
-        frequency === "none"
-    ) {
+        // ====================================================
+        // EDIT EXISTING TASK
+        // ====================================================
 
-        await createTask(
-            title
-        );
+        if (
+            editingTaskId !== null
+        ) {
 
-    }
+            await editTask(
+                editingTaskId,
+                title,
+                selectedDate
+            );
 
-    else {
-
-        // Create today's normal task
-
-        await createTask(
-            title
-        );
+        }
 
 
-        // Create recurring template
+        // ====================================================
+        // CREATE NEW TASK
+        // ====================================================
 
-        await createRecurringTask(
-            title,
-            frequency
-        );
+        else {
 
-    }
+            const frequency =
+                repeatSelect.value;
 
-}
 
+            // ------------------------------------------------
+            // ONE-TIME TASK
+            // ------------------------------------------------
+
+            if (
+                frequency === "none"
+            ) {
+
+                await createTask(
+                    title,
+                    selectedDate
+                );
+
+            }
+
+
+            // ------------------------------------------------
+            // RECURRING TASK
+            // ------------------------------------------------
+
+            else {
+
+                // Create the first task
+                // on the selected date.
+
+                await createTask(
+                    title,
+                    selectedDate
+                );
+
+
+                // Create recurring template.
+
+                await createRecurringTask(
+                    title,
+                    frequency
+                );
+
+            }
+
+        }
+
+
+        // ====================================================
+        // CLOSE + REFRESH
+        // ====================================================
 
         closeTaskModal();
 
@@ -593,7 +948,9 @@ else {
             error
         );
 
+
         alert(
+            error.message ||
             "Something went wrong. Please try again."
         );
 
@@ -1355,7 +1712,6 @@ async function loadStatisticsDashboard() {
             data.monthly.days
         );
 
-
     }
 
     catch (error) {
@@ -1390,7 +1746,8 @@ document
         }
     );
 
-    // ============================================================
+
+// ============================================================
 // SERVICE WORKER
 // ============================================================
 
