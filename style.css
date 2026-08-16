@@ -2611,3 +2611,67 @@ body.dark .status-badge {
         rgba(99,102,241,0.12);
 
 }
+
+/* ============================================================
+   TASK SCHEDULING
+   ============================================================ */
+
+.schedule-field {
+    margin-top: 16px;
+    width: 100%;
+}
+
+.schedule-field label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.schedule-field select,
+.schedule-field input[type="date"] {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #111827;
+    font-family: inherit;
+    font-size: 14px;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.schedule-field select:focus,
+.schedule-field input[type="date"]:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.12);
+}
+
+.schedule-field input[type="date"] {
+    margin-top: 10px;
+}
+
+/* Hidden custom date picker */
+
+.schedule-field .hidden {
+    display: none;
+}
+
+
+/* ============================================================
+   DARK MODE
+   ============================================================ */
+
+body.dark .schedule-field select,
+body.dark .schedule-field input[type="date"] {
+    background: #1f2937;
+    border-color: #374151;
+    color: #f9fafb;
+}
+
+body.dark .schedule-field select:focus,
+body.dark .schedule-field input[type="date"]:focus {
+    border-color: #818cf8;
+    box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.12);
+}
