@@ -2,8 +2,7 @@
 // TASKFLOW SERVICE WORKER
 // ============================================================
 
-const CACHE_NAME = "taskflow-v1";
-
+const CACHE_NAME = "taskflow-v3";
 
 const APP_FILES = [
 
@@ -55,6 +54,8 @@ self.addEventListener(
 
         );
 
+        // Activate the new service worker
+        // immediately.
 
         self.skipWaiting();
 
@@ -106,6 +107,7 @@ self.addEventListener(
 
         );
 
+        // Take control of open pages.
 
         self.clients.claim();
 
@@ -121,32 +123,30 @@ self.addEventListener(
     "fetch",
     function(event) {
 
+        // For normal page/app requests,
+        // try the network first so updates
+        // from GitHub Pages are received.
+
         event.respondWith(
 
-            caches.match(
+            fetch(
                 event.request
             )
             .then(
-                function(cachedResponse) {
+                function(networkResponse) {
 
-                    if (
-                        cachedResponse
-                    ) {
+                    return networkResponse;
 
-                        return cachedResponse;
+                }
+            )
+            .catch(
+                function() {
 
-                    }
+                    // If there is no internet,
+                    // use the cached version.
 
-
-                    return fetch(
+                    return caches.match(
                         event.request
-                    )
-                    .then(
-                        function(response) {
-
-                            return response;
-
-                        }
                     );
 
                 }
