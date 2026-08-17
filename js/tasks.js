@@ -1,29 +1,113 @@
 // ============================================================
 // TASKFLOW - TASK MANAGER
-// Handles task creation, loading, updating and deletion
 // ============================================================
 
 
 // ============================================================
-// CURRENT DATE
+// DATE HELPERS
 // ============================================================
 
 function getTodayDate() {
 
-    const today = new Date();
+    return formatDate(
+        new Date()
+    );
+
+}
+
+
+function formatDate(date) {
 
     const year =
-        today.getFullYear();
+        date.getFullYear();
 
     const month =
-        String(today.getMonth() + 1)
-            .padStart(2, "0");
+        String(
+            date.getMonth() + 1
+        ).padStart(
+            2,
+            "0"
+        );
 
     const day =
-        String(today.getDate())
-            .padStart(2, "0");
+        String(
+            date.getDate()
+        ).padStart(
+            2,
+            "0"
+        );
 
     return `${year}-${month}-${day}`;
+
+}
+
+
+function isValidTaskDate(dateString) {
+
+    if (
+        typeof dateString !== "string" ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(
+            dateString
+        )
+    ) {
+
+        return false;
+
+    }
+
+
+    const parts =
+        dateString
+            .split("-")
+            .map(Number);
+
+
+    const date =
+        new Date(
+            parts[0],
+            parts[1] - 1,
+            parts[2]
+        );
+
+
+    return (
+        date.getFullYear() === parts[0] &&
+        date.getMonth() === parts[1] - 1 &&
+        date.getDate() === parts[2]
+    );
+
+}
+
+
+function validateTaskDate(date) {
+
+    if (
+        !isValidTaskDate(date)
+    ) {
+
+        throw new Error(
+            "Please choose a valid task date."
+        );
+
+    }
+
+}
+
+
+function parseTaskDate(dateString) {
+
+    const parts =
+        dateString
+            .split("-")
+            .map(Number);
+
+
+    return new Date(
+        parts[0],
+        parts[1] - 1,
+        parts[2]
+    );
+
 }
 
 
@@ -31,20 +115,36 @@ function getTodayDate() {
 // CREATE TASK OBJECT
 // ============================================================
 
-function createTaskObject(title, date = getTodayDate()) {
+function createTaskObject(
+    title,
+    date = getTodayDate(),
+    recurringTaskId = null
+) {
+
+    validateTaskDate(
+        date
+    );
+
 
     return {
 
-        title: title.trim(),
+        title:
+            title.trim(),
 
-        completed: false,
+        completed:
+            false,
 
-        date: date,
+        date:
+            date,
 
         createdAt:
             new Date().toISOString(),
 
-        completedAt: null
+        completedAt:
+            null,
+
+        recurringTaskId:
+            recurringTaskId
 
     };
 
@@ -55,7 +155,10 @@ function createTaskObject(title, date = getTodayDate()) {
 // CREATE TASK
 // ============================================================
 
-async function createTask(title, date = getTodayDate()) {
+async function createTask(
+    title,
+    date = getTodayDate()
+) {
 
     const cleanTitle =
         title.trim();
@@ -70,13 +173,20 @@ async function createTask(title, date = getTodayDate()) {
     }
 
 
-    if (cleanTitle.length > 100) {
+    if (
+        cleanTitle.length > 100
+    ) {
 
         throw new Error(
             "Task title cannot exceed 100 characters."
         );
 
     }
+
+
+    validateTaskDate(
+        date
+    );
 
 
     const task =
@@ -86,30 +196,112 @@ async function createTask(title, date = getTodayDate()) {
         );
 
 
-    try {
-
-        const id =
-            await addTaskToDatabase(task);
-
-        console.log(
-            "Task created:",
-            id
+    const id =
+        await addTaskToDatabase(
+            task
         );
 
-        return await getTaskFromDatabase(id);
+
+    return await getTaskFromDatabase(
+        id
+    );
+
+}
+
+
+// ============================================================
+// CREATE RECURRING TASK
+// ============================================================
+
+async function createRecurringTask(
+    title,
+    frequency,
+    startDate
+) {
+
+    const cleanTitle =
+        title.trim();
+
+
+    if (!cleanTitle) {
+
+        throw new Error(
+            "Task title cannot be empty."
+        );
 
     }
 
-    catch (error) {
 
-        console.error(
-            "Unable to create task:",
-            error
+    if (
+        cleanTitle.length > 100
+    ) {
+
+        throw new Error(
+            "Task title cannot exceed 100 characters."
         );
 
-        throw error;
+    }
+
+
+    const validFrequencies = [
+        "daily",
+        "weekdays",
+        "weekly"
+    ];
+
+
+    if (
+        !validFrequencies.includes(
+            frequency
+        )
+    ) {
+
+        throw new Error(
+            "Invalid recurring task frequency."
+        );
 
     }
+
+
+    validateTaskDate(
+        startDate
+    );
+
+
+    const recurringTask = {
+
+        title:
+            cleanTitle,
+
+        frequency:
+            frequency,
+
+        active:
+            true,
+
+        startDate:
+            startDate,
+
+        endDate:
+            null,
+
+        createdAt:
+            new Date().toISOString()
+
+    };
+
+
+    const firstTask =
+        createTaskObject(
+            cleanTitle,
+            startDate
+        );
+
+
+    return await addRecurringTaskWithFirstOccurrence(
+        recurringTask,
+        firstTask
+    );
 
 }
 
@@ -120,10 +312,9 @@ async function createTask(title, date = getTodayDate()) {
 
 async function loadTodayTasks() {
 
-    const today =
-        getTodayDate();
-
-    return await loadTasksForDate(today);
+    return await loadTasksForDate(
+        getTodayDate()
+    );
 
 }
 
@@ -132,39 +323,34 @@ async function loadTodayTasks() {
 // LOAD TASKS FOR DATE
 // ============================================================
 
-async function loadTasksForDate(date) {
+async function loadTasksForDate(
+    date
+) {
 
-    try {
+    validateTaskDate(
+        date
+    );
 
-        const tasks =
-            await getTasksByDate(date);
 
-
-        // Sort oldest first
-        tasks.sort(
-            function(a, b) {
-
-                return new Date(a.createdAt)
-                    - new Date(b.createdAt);
-
-            }
+    const tasks =
+        await getTasksByDate(
+            date
         );
 
 
-        return tasks;
+    tasks.sort(
+        function(a, b) {
 
-    }
+            return (
+                new Date(a.createdAt) -
+                new Date(b.createdAt)
+            );
 
-    catch (error) {
+        }
+    );
 
-        console.error(
-            "Unable to load tasks:",
-            error
-        );
 
-        throw error;
-
-    }
+    return tasks;
 
 }
 
@@ -173,59 +359,41 @@ async function loadTasksForDate(date) {
 // COMPLETE / UNCOMPLETE TASK
 // ============================================================
 
-async function toggleTaskCompletion(id) {
+async function toggleTaskCompletion(
+    id
+) {
 
-    try {
-
-        const task =
-            await getTaskFromDatabase(id);
-
-
-        if (!task) {
-
-            throw new Error(
-                "Task not found."
-            );
-
-        }
-
-
-        task.completed =
-            !task.completed;
-
-
-        if (task.completed) {
-
-            task.completedAt =
-                new Date().toISOString();
-
-        }
-
-        else {
-
-            task.completedAt =
-                null;
-
-        }
-
-
-        await updateTaskInDatabase(task);
-
-
-        return task;
-
-    }
-
-    catch (error) {
-
-        console.error(
-            "Unable to update task:",
-            error
+    const task =
+        await getTaskFromDatabase(
+            id
         );
 
-        throw error;
+
+    if (!task) {
+
+        throw new Error(
+            "Task not found."
+        );
 
     }
+
+
+    task.completed =
+        !task.completed;
+
+
+    task.completedAt =
+        task.completed
+            ? new Date().toISOString()
+            : null;
+
+
+    await updateTaskInDatabase(
+        task
+    );
+
+
+    return task;
 
 }
 
@@ -234,7 +402,11 @@ async function toggleTaskCompletion(id) {
 // EDIT TASK
 // ============================================================
 
-async function editTask(id, newTitle) {
+async function editTask(
+    id,
+    newTitle,
+    newDate
+) {
 
     const cleanTitle =
         newTitle.trim();
@@ -249,7 +421,9 @@ async function editTask(id, newTitle) {
     }
 
 
-    if (cleanTitle.length > 100) {
+    if (
+        cleanTitle.length > 100
+    ) {
 
         throw new Error(
             "Task title cannot exceed 100 characters."
@@ -258,42 +432,47 @@ async function editTask(id, newTitle) {
     }
 
 
-    try {
-
-        const task =
-            await getTaskFromDatabase(id);
-
-
-        if (!task) {
-
-            throw new Error(
-                "Task not found."
-            );
-
-        }
-
-
-        task.title =
-            cleanTitle;
-
-
-        await updateTaskInDatabase(task);
-
-
-        return task;
-
-    }
-
-    catch (error) {
-
-        console.error(
-            "Unable to edit task:",
-            error
+    const task =
+        await getTaskFromDatabase(
+            id
         );
 
-        throw error;
+
+    if (!task) {
+
+        throw new Error(
+            "Task not found."
+        );
 
     }
+
+
+    const finalDate =
+        typeof newDate === "string" &&
+        newDate
+            ? newDate
+            : task.date;
+
+
+    validateTaskDate(
+        finalDate
+    );
+
+
+    task.title =
+        cleanTitle;
+
+
+    task.date =
+        finalDate;
+
+
+    await updateTaskInDatabase(
+        task
+    );
+
+
+    return task;
 
 }
 
@@ -302,40 +481,31 @@ async function editTask(id, newTitle) {
 // DELETE TASK
 // ============================================================
 
-async function removeTask(id) {
+async function removeTask(
+    id
+) {
 
-    try {
-
-        const task =
-            await getTaskFromDatabase(id);
-
-
-        if (!task) {
-
-            throw new Error(
-                "Task not found."
-            );
-
-        }
-
-
-        await deleteTaskFromDatabase(id);
-
-
-        return true;
-
-    }
-
-    catch (error) {
-
-        console.error(
-            "Unable to delete task:",
-            error
+    const task =
+        await getTaskFromDatabase(
+            id
         );
 
-        throw error;
+
+    if (!task) {
+
+        throw new Error(
+            "Task not found."
+        );
 
     }
+
+
+    await deleteTaskFromDatabase(
+        id
+    );
+
+
+    return true;
 
 }
 
@@ -344,10 +514,14 @@ async function removeTask(id) {
 // GET TASK STATISTICS
 // ============================================================
 
-async function getTaskStatistics(date = getTodayDate()) {
+async function getTaskStatistics(
+    date = getTodayDate()
+) {
 
     const tasks =
-        await getTasksByDate(date);
+        await getTasksByDate(
+            date
+        );
 
 
     const total =
@@ -356,7 +530,8 @@ async function getTaskStatistics(date = getTodayDate()) {
 
     const completed =
         tasks.filter(
-            task => task.completed
+            task =>
+                task.completed
         ).length;
 
 
@@ -368,21 +543,24 @@ async function getTaskStatistics(date = getTodayDate()) {
         total === 0
             ? 0
             : Math.round(
-                (completed / total) * 100
+                (
+                    completed /
+                    total
+                ) * 100
             );
 
 
     return {
 
-        date: date,
+        date,
 
-        total: total,
+        total,
 
-        completed: completed,
+        completed,
 
-        pending: pending,
+        pending,
 
-        percentage: percentage
+        percentage
 
     };
 
@@ -395,22 +573,7 @@ async function getTaskStatistics(date = getTodayDate()) {
 
 async function getAllTasks() {
 
-    try {
-
-        return await getAllTasksFromDatabase();
-
-    }
-
-    catch (error) {
-
-        console.error(
-            "Unable to load all tasks:",
-            error
-        );
-
-        throw error;
-
-    }
+    return await getAllTasksFromDatabase();
 
 }
 
@@ -423,6 +586,16 @@ async function getTasksBetweenDates(
     startDate,
     endDate
 ) {
+
+    validateTaskDate(
+        startDate
+    );
+
+
+    validateTaskDate(
+        endDate
+    );
+
 
     const allTasks =
         await getAllTasks();
@@ -450,11 +623,11 @@ async function getCompletionPercentage(
     date = getTodayDate()
 ) {
 
-    const statistics =
-        await getTaskStatistics(date);
-
-
-    return statistics.percentage;
+    return (
+        await getTaskStatistics(
+            date
+        )
+    ).percentage;
 
 }
 
@@ -468,12 +641,14 @@ async function getWeekStatistics(
 ) {
 
     const date =
-        new Date(referenceDate);
+        new Date(
+            referenceDate
+        );
 
 
-    // Find Monday
     const day =
         date.getDay();
+
 
     const difference =
         day === 0
@@ -482,65 +657,50 @@ async function getWeekStatistics(
 
 
     const monday =
-        new Date(date);
+        new Date(
+            date
+        );
+
 
     monday.setDate(
-        date.getDate() + difference
+        date.getDate() +
+        difference
     );
 
 
     const statistics = [];
 
 
-    for (let i = 0; i < 7; i++) {
+    for (
+        let i = 0;
+        i < 7;
+        i++
+    ) {
 
         const current =
-            new Date(monday);
-
-
-        current.setDate(
-            monday.getDate() + i
-        );
-
-
-        const dateString =
-            formatDate(current);
-
-
-        const stats =
-            await getTaskStatistics(
-                dateString
+            new Date(
+                monday
             );
 
 
-        statistics.push(stats);
+        current.setDate(
+            monday.getDate() +
+            i
+        );
+
+
+        statistics.push(
+            await getTaskStatistics(
+                formatDate(
+                    current
+                )
+            )
+        );
 
     }
 
 
     return statistics;
-
-}
-
-
-// ============================================================
-// FORMAT DATE
-// ============================================================
-
-function formatDate(date) {
-
-    const year =
-        date.getFullYear();
-
-    const month =
-        String(date.getMonth() + 1)
-            .padStart(2, "0");
-
-    const day =
-        String(date.getDate())
-            .padStart(2, "0");
-
-    return `${year}-${month}-${day}`;
 
 }
 
@@ -559,84 +719,6 @@ async function getTodaySummary() {
 
 
 // ============================================================
-// TASK MANAGER READY EVENT
-// ============================================================
-
-document.dispatchEvent(
-    new CustomEvent(
-        "taskflowTasksReady"
-    )
-);
-
-// ============================================================
-// RECURRING TASKS
-// ============================================================
-
-
-// ============================================================
-// CREATE RECURRING TASK
-// ============================================================
-
-async function createRecurringTask(
-    title,
-    frequency
-) {
-
-    const cleanTitle =
-        title.trim();
-
-
-    if (!cleanTitle) {
-
-        throw new Error(
-            "Task title cannot be empty."
-        );
-
-    }
-
-
-    const validFrequencies = [
-        "daily",
-        "weekdays",
-        "weekly"
-    ];
-
-
-    if (
-        !validFrequencies.includes(
-            frequency
-        )
-    ) {
-
-        throw new Error(
-            "Invalid recurring task frequency."
-        );
-
-    }
-
-
-    const recurringTask = {
-
-        title: cleanTitle,
-
-        frequency: frequency,
-
-        active: true,
-
-        createdAt:
-            new Date().toISOString()
-
-    };
-
-
-    return await addRecurringTaskToDatabase(
-        recurringTask
-    );
-
-}
-
-
-// ============================================================
 // GET RECURRING TASKS
 // ============================================================
 
@@ -648,10 +730,42 @@ async function getRecurringTasks() {
 
 
 // ============================================================
-// DELETE RECURRING TASK
+// STOP RECURRING TASK
 // ============================================================
 
-async function removeRecurringTask(id) {
+async function stopRecurringTask(
+    id
+) {
+
+    if (
+        id === null ||
+        id === undefined
+    ) {
+
+        throw new Error(
+            "Recurring task not found."
+        );
+
+    }
+
+
+    await deactivateRecurringTaskInDatabase(
+        id
+    );
+
+
+    return true;
+
+}
+
+
+// ============================================================
+// DELETE RECURRING TASK SERIES
+// ============================================================
+
+async function removeRecurringTask(
+    id
+) {
 
     return await deleteRecurringTaskFromDatabase(
         id
@@ -668,6 +782,41 @@ function shouldCreateRecurringTask(
     recurringTask,
     date
 ) {
+
+    const dateString =
+        formatDate(
+            date
+        );
+
+
+    const startDate =
+        recurringTask.startDate ||
+        formatDate(
+            new Date(
+                recurringTask.createdAt
+            )
+        );
+
+
+    if (
+        dateString < startDate
+    ) {
+
+        return false;
+
+    }
+
+
+    if (
+        recurringTask.endDate &&
+        dateString >
+            recurringTask.endDate
+    ) {
+
+        return false;
+
+    }
+
 
     const day =
         date.getDay();
@@ -690,17 +839,20 @@ function shouldCreateRecurringTask(
             );
 
 
-        case "weekly":
+        case "weekly": {
 
-            const created =
-                new Date(
-                    recurringTask.createdAt
+            const start =
+                parseTaskDate(
+                    startDate
                 );
 
 
             return (
-                created.getDay() === day
+                start.getDay() ===
+                day
             );
+
+        }
 
 
         default:
@@ -713,26 +865,155 @@ function shouldCreateRecurringTask(
 
 
 // ============================================================
-// GENERATE TODAY'S RECURRING TASKS
+// REPAIR OLD RECURRING DATA
 // ============================================================
 
-async function generateRecurringTasksForToday() {
+async function repairLegacyRecurringTasks() {
 
     const recurringTasks =
         await getRecurringTasks();
 
 
-    const today =
-        new Date();
+    const allTasks =
+        await getAllTasks();
 
 
-    const todayString =
-        getTodayDate();
+    for (
+        const recurringTask
+        of recurringTasks
+    ) {
+
+        let changed =
+            false;
+
+
+        if (
+            !recurringTask.startDate
+        ) {
+
+            const createdDate =
+                formatDate(
+                    new Date(
+                        recurringTask.createdAt
+                    )
+                );
+
+
+            const matchingTasks =
+                allTasks
+                    .filter(
+                        function(task) {
+
+                            return (
+                                !task.recurringTaskId &&
+                                task.title ===
+                                    recurringTask.title &&
+                                task.date >=
+                                    createdDate
+                            );
+
+                        }
+                    )
+                    .sort(
+                        function(a, b) {
+
+                            return (
+                                a.date.localeCompare(
+                                    b.date
+                                ) ||
+                                (
+                                    new Date(
+                                        a.createdAt
+                                    ) -
+                                    new Date(
+                                        b.createdAt
+                                    )
+                                )
+                            );
+
+                        }
+                    );
+
+
+            recurringTask.startDate =
+                matchingTasks.length > 0
+                    ? matchingTasks[0].date
+                    : createdDate;
+
+
+            recurringTask.endDate =
+                null;
+
+
+            changed =
+                true;
+
+
+            /*
+                Link the first old occurrence.
+            */
+
+            if (
+                matchingTasks.length > 0
+            ) {
+
+                const firstTask =
+                    matchingTasks[0];
+
+
+                firstTask.recurringTaskId =
+                    recurringTask.id;
+
+
+                await updateTaskInDatabase(
+                    firstTask
+                );
+
+            }
+
+        }
+
+
+        if (changed) {
+
+            await updateRecurringTaskInDatabase(
+                recurringTask
+            );
+
+        }
+
+    }
+
+}
+
+
+// ============================================================
+// GENERATE RECURRING TASKS FOR DATE
+// ============================================================
+
+async function generateRecurringTasksForDate(
+    targetDate = new Date()
+) {
+
+    const recurringTasks =
+        await getRecurringTasks();
+
+
+    const date =
+        new Date(
+            targetDate
+        );
+
+
+    const dateString =
+        formatDate(
+            date
+        );
 
 
     const existingTasks =
         await getTasksByDate(
-            todayString
+            dateString
         );
 
 
@@ -753,7 +1034,7 @@ async function generateRecurringTasksForToday() {
         if (
             !shouldCreateRecurringTask(
                 recurringTask,
-                today
+                date
             )
         ) {
 
@@ -764,9 +1045,18 @@ async function generateRecurringTasksForToday() {
 
         const alreadyExists =
             existingTasks.some(
-                task =>
-                    task.recurringTaskId ===
-                    recurringTask.id
+                function(task) {
+
+                    return (
+                        Number(
+                            task.recurringTaskId
+                        ) ===
+                        Number(
+                            recurringTask.id
+                        )
+                    );
+
+                }
             );
 
 
@@ -779,31 +1069,45 @@ async function generateRecurringTasksForToday() {
         }
 
 
-        const task = {
-
-            title:
+        const task =
+            createTaskObject(
                 recurringTask.title,
-
-            completed: false,
-
-            date:
-                todayString,
-
-            createdAt:
-                new Date().toISOString(),
-
-            completedAt: null,
-
-            recurringTaskId:
+                dateString,
                 recurringTask.id
-
-        };
+            );
 
 
         await addTaskToDatabase(
             task
         );
 
+
+        existingTasks.push(
+            task
+        );
+
     }
 
 }
+
+
+// ============================================================
+// GENERATE TODAY'S RECURRING TASKS
+// ============================================================
+
+async function generateRecurringTasksForToday() {
+
+    await repairLegacyRecurringTasks();
+
+    await generateRecurringTasksForDate(
+        new Date()
+    );
+
+}
+
+
+document.dispatchEvent(
+    new CustomEvent(
+        "taskflowTasksReady"
+    )
+);
