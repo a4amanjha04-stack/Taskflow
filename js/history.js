@@ -13,53 +13,27 @@ function historyFormatDate(date) {
         date.getFullYear();
 
     const month =
-        String(
-            date.getMonth() + 1
-        ).padStart(
-            2,
-            "0"
-        );
+        String(date.getMonth() + 1)
+            .padStart(2, "0");
 
     const day =
-        String(
-            date.getDate()
-        ).padStart(
-            2,
-            "0"
-        );
+        String(date.getDate())
+            .padStart(2, "0");
 
     return `${year}-${month}-${day}`;
 
 }
 
 
-function historyParseDate(
-    dateString
-) {
+function historyParseDate(dateString) {
 
     const parts =
-        dateString
-            .split("-")
-            .map(Number);
-
+        dateString.split("-");
 
     return new Date(
-        parts[0],
-        parts[1] - 1,
-        parts[2]
-    );
-
-}
-
-
-function historyMonthStart(
-    date
-) {
-
-    return new Date(
-        date.getFullYear(),
-        date.getMonth(),
-        1
+        Number(parts[0]),
+        Number(parts[1]) - 1,
+        Number(parts[2])
     );
 
 }
@@ -92,8 +66,10 @@ const historyMonthNames = [
 // ============================================================
 
 let historyCurrentMonth =
-    historyMonthStart(
-        new Date()
+    new Date(
+        new Date().getFullYear(),
+        new Date().getMonth(),
+        1
     );
 
 
@@ -139,7 +115,9 @@ function getMonthCalendarDays(
     const days = [];
 
 
-    // Previous month
+    // ========================================================
+    // PREVIOUS MONTH
+    // ========================================================
 
     for (
         let i = firstWeekday;
@@ -155,17 +133,22 @@ function getMonthCalendarDays(
             );
 
 
-        days.push(
-            {
+        days.push({
+
+            date:
                 date,
-                currentMonth: false
-            }
-        );
+
+            currentMonth:
+                false
+
+        });
 
     }
 
 
-    // Current month
+    // ========================================================
+    // CURRENT MONTH
+    // ========================================================
 
     for (
         let day = 1;
@@ -181,17 +164,22 @@ function getMonthCalendarDays(
             );
 
 
-        days.push(
-            {
+        days.push({
+
+            date:
                 date,
-                currentMonth: true
-            }
-        );
+
+            currentMonth:
+                true
+
+        });
 
     }
 
 
-    // Next month
+    // ========================================================
+    // NEXT MONTH
+    // ========================================================
 
     while (
         days.length % 7 !== 0
@@ -202,18 +190,21 @@ function getMonthCalendarDays(
                 year,
                 month,
                 days.length -
-                    daysInMonth -
-                    firstWeekday +
-                    1
+                daysInMonth -
+                firstWeekday +
+                1
             );
 
 
-        days.push(
-            {
+        days.push({
+
+            date:
                 date,
-                currentMonth: false
-            }
-        );
+
+            currentMonth:
+                false
+
+        });
 
     }
 
@@ -240,8 +231,10 @@ async function getHistoryMonthStatistics(
 
 
     /*
-        Load all tasks once instead of
-        making a database query for every
+        Load all tasks once.
+
+        This avoids making a separate
+        IndexedDB request for every
         calendar cell.
     */
 
@@ -277,13 +270,17 @@ async function getHistoryMonthStatistics(
 
             const completed =
                 dayTasks.filter(
-                    task =>
-                        task.completed
+                    function(task) {
+
+                        return task.completed;
+
+                    }
                 ).length;
 
 
             const pending =
-                total - completed;
+                total -
+                completed;
 
 
             const percentage =
@@ -299,15 +296,23 @@ async function getHistoryMonthStatistics(
 
             return {
 
-                ...day,
+                date:
+                    day.date,
 
-                total,
+                currentMonth:
+                    day.currentMonth,
 
-                completed,
+                total:
+                    total,
 
-                pending,
+                completed:
+                    completed,
 
-                percentage
+                pending:
+                    pending,
+
+                percentage:
+                    percentage
 
             };
 
@@ -318,31 +323,41 @@ async function getHistoryMonthStatistics(
 
 
 // ============================================================
-// KEEP SELECTED DATE IN MONTH
+// KEEP SELECTED DATE INSIDE DISPLAYED MONTH
 // ============================================================
 
 function ensureHistorySelectedDateIsVisible() {
 
-    const selected =
+    const selectedDate =
         historyParseDate(
             historySelectedDate
         );
 
 
+    const selectedYear =
+        selectedDate.getFullYear();
+
+
+    const selectedMonth =
+        selectedDate.getMonth();
+
+
+    const currentYear =
+        historyCurrentMonth.getFullYear();
+
+
+    const currentMonth =
+        historyCurrentMonth.getMonth();
+
+
     if (
-        selected.getFullYear() !==
-            historyCurrentMonth.getFullYear() ||
-        selected.getMonth() !==
-            historyCurrentMonth.getMonth()
+        selectedYear !== currentYear ||
+        selectedMonth !== currentMonth
     ) {
 
         historySelectedDate =
             historyFormatDate(
-                new Date(
-                    historyCurrentMonth.getFullYear(),
-                    historyCurrentMonth.getMonth(),
-                    1
-                )
+                historyCurrentMonth
             );
 
     }
@@ -363,13 +378,17 @@ async function renderHistoryCalendar() {
 
 
     if (!calendar) {
+
         return;
+
     }
 
 
     historyCurrentMonth =
-        historyMonthStart(
-            historyCurrentMonth
+        new Date(
+            historyCurrentMonth.getFullYear(),
+            historyCurrentMonth.getMonth(),
+            1
         );
 
 
@@ -384,25 +403,65 @@ async function renderHistoryCalendar() {
         historyCurrentMonth.getMonth();
 
 
-    const title =
+    const monthTitle =
         document.getElementById(
             "historyMonthTitle"
         );
 
 
-    if (title) {
+    if (monthTitle) {
 
-        title.textContent =
+        monthTitle.textContent =
             `${historyMonthNames[month]} ${year}`;
 
     }
 
 
-    const days =
-        await getHistoryMonthStatistics(
-            year,
-            month
+    let days;
+
+
+    try {
+
+        days =
+            await getHistoryMonthStatistics(
+                year,
+                month
+            );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Unable to load history:",
+            error
         );
+
+
+        calendar.innerHTML = `
+
+            <div class="history-empty">
+
+                <div>
+                    ⚠️
+                </div>
+
+                <strong>
+                    Unable to load history
+                </strong>
+
+                <p>
+                    Please refresh the application.
+                </p>
+
+            </div>
+
+        `;
+
+
+        return;
+
+    }
 
 
     calendar.innerHTML = "";
@@ -449,8 +508,7 @@ async function renderHistoryCalendar() {
 
 
             if (
-                dateString ===
-                today
+                dateString === today
             ) {
 
                 button.classList.add(
@@ -598,10 +656,75 @@ async function loadHistorySelectedDay(
     dateString
 ) {
 
-    const tasks =
-        await getTasksByDate(
-            dateString
+    const list =
+        document.getElementById(
+            "historyTaskList"
         );
+
+
+    /*
+        Validate required date format.
+    */
+
+    if (
+        !/^\d{4}-\d{2}-\d{2}$/.test(
+            dateString
+        )
+    ) {
+
+        return;
+
+    }
+
+
+    let tasks;
+
+
+    try {
+
+        tasks =
+            await getTasksByDate(
+                dateString
+            );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Unable to load history tasks:",
+            error
+        );
+
+
+        if (list) {
+
+            list.innerHTML = `
+
+                <div class="history-empty">
+
+                    <div>
+                        ⚠️
+                    </div>
+
+                    <strong>
+                        Unable to load tasks
+                    </strong>
+
+                    <p>
+                        Please refresh the application.
+                    </p>
+
+                </div>
+
+            `;
+
+        }
+
+
+        return;
+
+    }
 
 
     tasks.sort(
@@ -622,8 +745,11 @@ async function loadHistorySelectedDay(
 
     const completed =
         tasks.filter(
-            task =>
-                task.completed
+            function(task) {
+
+                return task.completed;
+
+            }
         ).length;
 
 
@@ -663,10 +789,18 @@ async function loadHistorySelectedDay(
             date.toLocaleDateString(
                 "en-IN",
                 {
-                    weekday: "long",
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric"
+                    weekday:
+                        "long",
+
+                    day:
+                        "numeric",
+
+                    month:
+                        "long",
+
+                    year:
+                        "numeric"
+
                 }
             );
 
@@ -721,14 +855,10 @@ async function loadHistorySelectedDay(
     }
 
 
-    const list =
-        document.getElementById(
-            "historyTaskList"
-        );
-
-
     if (!list) {
+
         return;
+
     }
 
 
@@ -768,29 +898,29 @@ async function loadHistorySelectedDay(
 
                     return `
 
-                        <div
-                            class="
-                                history-task
-                                ${
-                                    task.completed
-                                        ? "completed"
-                                        : ""
-                                }
-                            "
-                        >
+                        <div class="
+                            history-task
+                            ${
+                                task.completed
+                                    ? "completed"
+                                    : ""
+                            }
+                        ">
 
-                            <span
-                                class="history-task-check"
-                            >
+                            <span class="
+                                history-task-check
+                            ">
+
                                 ${
                                     task.completed
                                         ? "✓"
                                         : ""
                                 }
+
                             </span>
 
                             <span>
-                                ${escapeHTML(
+                                ${historyEscapeHTML(
                                     task.title
                                 )}
                             </span>
@@ -802,6 +932,32 @@ async function loadHistorySelectedDay(
                 }
             )
             .join("");
+
+}
+
+
+// ============================================================
+// SAFE HTML ESCAPING
+// ============================================================
+
+function historyEscapeHTML(text) {
+
+    const element =
+        document.createElement(
+            "div"
+        );
+
+
+    element.textContent =
+        String(
+            text === null ||
+            text === undefined
+                ? ""
+                : text
+        );
+
+
+    return element.innerHTML;
 
 }
 
@@ -821,11 +977,8 @@ function historyPreviousMonth() {
 
 
     /*
-        The old selected date could remain
-        in the previous month.
-
-        Now selecting a month always selects
-        its first day.
+        When changing month, make the
+        first day of that month selected.
     */
 
     historySelectedDate =
@@ -867,8 +1020,10 @@ function historyGoToToday() {
 
 
     historyCurrentMonth =
-        historyMonthStart(
-            today
+        new Date(
+            today.getFullYear(),
+            today.getMonth(),
+            1
         );
 
 
