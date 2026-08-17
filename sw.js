@@ -2,7 +2,13 @@
 // TASKFLOW SERVICE WORKER
 // ============================================================
 
-const CACHE_NAME = "taskflow-v3";
+const CACHE_NAME =
+    "taskflow-v5";
+
+
+const CHART_JS_URL =
+    "https://cdn.jsdelivr.net/npm/chart.js";
+
 
 const APP_FILES = [
 
@@ -39,23 +45,22 @@ self.addEventListener(
 
         event.waitUntil(
 
-            caches.open(
-                CACHE_NAME
-            )
-            .then(
-                function(cache) {
+            caches
+                .open(
+                    CACHE_NAME
+                )
+                .then(
+                    function(cache) {
 
-                    return cache.addAll(
-                        APP_FILES
-                    );
+                        return cache.addAll(
+                            APP_FILES
+                        );
 
-                }
-            )
+                    }
+                )
 
         );
 
-        // Activate the new service worker
-        // immediately.
 
         self.skipWaiting();
 
@@ -73,7 +78,8 @@ self.addEventListener(
 
         event.waitUntil(
 
-            caches.keys()
+            caches
+                .keys()
                 .then(
                     function(cacheNames) {
 
@@ -104,12 +110,15 @@ self.addEventListener(
 
                     }
                 )
+                .then(
+                    function() {
+
+                        return self.clients.claim();
+
+                    }
+                )
 
         );
-
-        // Take control of open pages.
-
-        self.clients.claim();
 
     }
 );
@@ -123,17 +132,87 @@ self.addEventListener(
     "fetch",
     function(event) {
 
-        // For normal page/app requests,
-        // try the network first so updates
-        // from GitHub Pages are received.
+        const request =
+            event.request;
+
+
+        if (
+            request.method !==
+            "GET"
+        ) {
+
+            return;
+
+        }
+
 
         event.respondWith(
 
             fetch(
-                event.request
+                request
             )
             .then(
                 function(networkResponse) {
+
+                    /*
+                        Do not cache HTTP errors.
+                    */
+
+                    if (
+                        !networkResponse ||
+                        !networkResponse.ok
+                    ) {
+
+                        throw new Error(
+                            "Network response was not successful."
+                        );
+
+                    }
+
+
+                    const responseToCache =
+                        networkResponse.clone();
+
+
+                    /*
+                        Cache local app files and Chart.js.
+                    */
+
+                    if (
+                        request.url.startsWith(
+                            self.location.origin
+                        ) ||
+                        request.url ===
+                            CHART_JS_URL
+                    ) {
+
+                        caches
+                            .open(
+                                CACHE_NAME
+                            )
+                            .then(
+                                function(cache) {
+
+                                    cache.put(
+                                        request,
+                                        responseToCache
+                                    );
+
+                                }
+                            )
+                            .catch(
+                                function(error) {
+
+                                    console.warn(
+                                        "TaskFlow cache update failed:",
+                                        error
+                                    );
+
+                                }
+                            );
+
+                    }
+
 
                     return networkResponse;
 
@@ -142,12 +221,38 @@ self.addEventListener(
             .catch(
                 function() {
 
-                    // If there is no internet,
-                    // use the cached version.
+                    return caches
+                        .match(
+                            request
+                        )
+                        .then(
+                            function(cachedResponse) {
 
-                    return caches.match(
-                        event.request
-                    );
+                                if (
+                                    cachedResponse
+                                ) {
+
+                                    return cachedResponse;
+
+                                }
+
+
+                                if (
+                                    request.mode ===
+                                    "navigate"
+                                ) {
+
+                                    return caches.match(
+                                        "./index.html"
+                                    );
+
+                                }
+
+
+                                return Response.error();
+
+                            }
+                        );
 
                 }
             )
