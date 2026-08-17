@@ -13,25 +13,50 @@ function getDateString(date) {
         date.getFullYear();
 
     const month =
-        String(date.getMonth() + 1)
-            .padStart(2, "0");
+        String(
+            date.getMonth() + 1
+        ).padStart(
+            2,
+            "0"
+        );
 
     const day =
-        String(date.getDate())
-            .padStart(2, "0");
+        String(
+            date.getDate()
+        ).padStart(
+            2,
+            "0"
+        );
 
     return `${year}-${month}-${day}`;
+
 }
 
 
-// ============================================================
-// GET DATE FROM DAYS AGO
-// ============================================================
+function parseStatisticsDate(
+    dateString
+) {
+
+    const parts =
+        dateString
+            .split("-")
+            .map(Number);
+
+
+    return new Date(
+        parts[0],
+        parts[1] - 1,
+        parts[2]
+    );
+
+}
+
 
 function getDateDaysAgo(days) {
 
     const date =
         new Date();
+
 
     date.setHours(
         0,
@@ -40,11 +65,89 @@ function getDateDaysAgo(days) {
         0
     );
 
+
     date.setDate(
-        date.getDate() - days
+        date.getDate() -
+        days
     );
 
+
     return date;
+
+}
+
+
+function getTodayStatisticsDate() {
+
+    return getDateString(
+        new Date()
+    );
+
+}
+
+
+// ============================================================
+// BUILD DAILY STATISTICS
+// ============================================================
+
+function buildDailyStatistics(
+    dateString,
+    tasks
+) {
+
+    const dateTasks =
+        tasks.filter(
+            function(task) {
+
+                return (
+                    task.date ===
+                    dateString
+                );
+
+            }
+        );
+
+
+    const total =
+        dateTasks.length;
+
+
+    const completed =
+        dateTasks.filter(
+            task =>
+                task.completed
+        ).length;
+
+
+    const pending =
+        total - completed;
+
+
+    const percentage =
+        total === 0
+            ? 0
+            : Math.round(
+                (
+                    completed /
+                    total
+                ) * 100
+            );
+
+
+    return {
+
+        date:
+            dateString,
+
+        total,
+
+        completed,
+
+        pending,
+
+        percentage
+
+    };
 
 }
 
@@ -63,41 +166,10 @@ async function getDailyStatistics(
         );
 
 
-    const total =
-        tasks.length;
-
-
-    const completed =
-        tasks.filter(
-            task => task.completed
-        ).length;
-
-
-    const pending =
-        total - completed;
-
-
-    const percentage =
-        total === 0
-            ? 0
-            : Math.round(
-                (completed / total) * 100
-            );
-
-
-    return {
-
-        date: dateString,
-
-        total,
-
-        completed,
-
-        pending,
-
-        percentage
-
-    };
+    return buildDailyStatistics(
+        dateString,
+        tasks
+    );
 
 }
 
@@ -106,7 +178,14 @@ async function getDailyStatistics(
 // LAST 7 DAYS
 // ============================================================
 
-async function getLast7DaysStatistics() {
+async function getLast7DaysStatistics(
+    tasks = null
+) {
+
+    const allTasks =
+        tasks ||
+        await getAllTasks();
+
 
     const result = [];
 
@@ -118,21 +197,22 @@ async function getLast7DaysStatistics() {
     ) {
 
         const date =
-            getDateDaysAgo(i);
+            getDateDaysAgo(
+                i
+            );
 
 
         const dateString =
-            getDateString(date);
-
-
-        const statistics =
-            await getDailyStatistics(
-                dateString
+            getDateString(
+                date
             );
 
 
         result.push(
-            statistics
+            buildDailyStatistics(
+                dateString,
+                allTasks
+            )
         );
 
     }
@@ -147,7 +227,14 @@ async function getLast7DaysStatistics() {
 // LAST 30 DAYS
 // ============================================================
 
-async function getLast30DaysStatistics() {
+async function getLast30DaysStatistics(
+    tasks = null
+) {
+
+    const allTasks =
+        tasks ||
+        await getAllTasks();
+
 
     const result = [];
 
@@ -159,21 +246,22 @@ async function getLast30DaysStatistics() {
     ) {
 
         const date =
-            getDateDaysAgo(i);
+            getDateDaysAgo(
+                i
+            );
 
 
         const dateString =
-            getDateString(date);
-
-
-        const statistics =
-            await getDailyStatistics(
-                dateString
+            getDateString(
+                date
             );
 
 
         result.push(
-            statistics
+            buildDailyStatistics(
+                dateString,
+                allTasks
+            )
         );
 
     }
@@ -185,27 +273,33 @@ async function getLast30DaysStatistics() {
 
 
 // ============================================================
-// WEEKLY SUMMARY
+// SUMMARY HELPER
 // ============================================================
 
-async function getWeeklySummary() {
-
-    const days =
-        await getLast7DaysStatistics();
-
+function summarizeDays(
+    days
+) {
 
     const totalTasks =
         days.reduce(
-            (sum, day) =>
-                sum + day.total,
+            (
+                sum,
+                day
+            ) =>
+                sum +
+                day.total,
             0
         );
 
 
     const completedTasks =
         days.reduce(
-            (sum, day) =>
-                sum + day.completed,
+            (
+                sum,
+                day
+            ) =>
+                sum +
+                day.completed,
             0
         );
 
@@ -235,7 +329,10 @@ async function getWeeklySummary() {
 
     const bestDay =
         days.reduce(
-            function(best, current) {
+            function(
+                best,
+                current
+            ) {
 
                 if (
                     current.total === 0
@@ -249,7 +346,13 @@ async function getWeeklySummary() {
                 if (
                     !best ||
                     current.percentage >
-                    best.percentage
+                        best.percentage ||
+                    (
+                        current.percentage ===
+                            best.percentage &&
+                        current.completed >
+                            best.completed
+                    )
                 ) {
 
                     return current;
@@ -281,6 +384,27 @@ async function getWeeklySummary() {
         bestDay
 
     };
+
+}
+
+
+// ============================================================
+// WEEKLY SUMMARY
+// ============================================================
+
+async function getWeeklySummary(
+    tasks = null
+) {
+
+    const days =
+        await getLast7DaysStatistics(
+            tasks
+        );
+
+
+    return summarizeDays(
+        days
+    );
 
 }
 
@@ -289,119 +413,60 @@ async function getWeeklySummary() {
 // MONTHLY SUMMARY
 // ============================================================
 
-async function getMonthlySummary() {
+async function getMonthlySummary(
+    tasks = null
+) {
 
     const days =
-        await getLast30DaysStatistics();
-
-
-    const totalTasks =
-        days.reduce(
-            (sum, day) =>
-                sum + day.total,
-            0
+        await getLast30DaysStatistics(
+            tasks
         );
 
 
-    const completedTasks =
-        days.reduce(
-            (sum, day) =>
-                sum + day.completed,
-            0
-        );
-
-
-    const pendingTasks =
-        totalTasks -
-        completedTasks;
-
-
-    const percentage =
-        totalTasks === 0
-            ? 0
-            : Math.round(
-                (
-                    completedTasks /
-                    totalTasks
-                ) * 100
-            );
-
-
-    const activeDays =
-        days.filter(
-            day =>
-                day.total > 0
-        ).length;
-
-
-    const bestDay =
-        days.reduce(
-            function(best, current) {
-
-                if (
-                    current.total === 0
-                ) {
-
-                    return best;
-
-                }
-
-
-                if (
-                    !best ||
-                    current.percentage >
-                    best.percentage
-                ) {
-
-                    return current;
-
-                }
-
-
-                return best;
-
-            },
-            null
-        );
-
-
-    return {
-
-        days,
-
-        totalTasks,
-
-        completedTasks,
-
-        pendingTasks,
-
-        percentage,
-
-        activeDays,
-
-        bestDay
-
-    };
+    return summarizeDays(
+        days
+    );
 
 }
 
 
 // ============================================================
 // ALL-TIME SUMMARY
+// Future tasks excluded.
 // ============================================================
 
-async function getAllTimeSummary() {
+async function getAllTimeSummary(
+    tasks = null
+) {
 
-    const tasks =
+    const allTasks =
+        tasks ||
         await getAllTasks();
 
 
+    const today =
+        getTodayStatisticsDate();
+
+
+    const recordedTasks =
+        allTasks.filter(
+            function(task) {
+
+                return (
+                    task.date <=
+                    today
+                );
+
+            }
+        );
+
+
     const totalTasks =
-        tasks.length;
+        recordedTasks.length;
 
 
     const completedTasks =
-        tasks.filter(
+        recordedTasks.filter(
             task =>
                 task.completed
         ).length;
@@ -442,34 +507,41 @@ async function getAllTimeSummary() {
 // BEST DAY
 // ============================================================
 
-async function getBestProductivityDay() {
+async function getBestProductivityDay(
+    tasks = null
+) {
 
     const days =
-        await getLast30DaysStatistics();
-
-
-    const activeDays =
-        days.filter(
-            day =>
-                day.total > 0
+        await getLast30DaysStatistics(
+            tasks
         );
 
 
-    if (
-        activeDays.length === 0
-    ) {
-
-        return null;
-
-    }
-
-
-    return activeDays.reduce(
-        function(best, current) {
+    return days.reduce(
+        function(
+            best,
+            current
+        ) {
 
             if (
+                current.total === 0
+            ) {
+
+                return best;
+
+            }
+
+
+            if (
+                !best ||
                 current.percentage >
-                best.percentage
+                    best.percentage ||
+                (
+                    current.percentage ===
+                        best.percentage &&
+                    current.completed >
+                        best.completed
+                )
             ) {
 
                 return current;
@@ -479,7 +551,8 @@ async function getBestProductivityDay() {
 
             return best;
 
-        }
+        },
+        null
     );
 
 }
@@ -489,10 +562,14 @@ async function getBestProductivityDay() {
 // AVERAGE DAILY COMPLETION
 // ============================================================
 
-async function getAverageDailyCompletion() {
+async function getAverageDailyCompletion(
+    tasks = null
+) {
 
     const days =
-        await getLast30DaysStatistics();
+        await getLast30DaysStatistics(
+            tasks
+        );
 
 
     const activeDays =
@@ -513,8 +590,12 @@ async function getAverageDailyCompletion() {
 
     const totalPercentage =
         activeDays.reduce(
-            (sum, day) =>
-                sum + day.percentage,
+            (
+                sum,
+                day
+            ) =>
+                sum +
+                day.percentage,
             0
         );
 
@@ -528,38 +609,20 @@ async function getAverageDailyCompletion() {
 
 
 // ============================================================
-// CURRENT STREAK
-// ============================================================
-
-
-
-
-// ============================================================
-// LONGEST STREAK
-// ============================================================
-// ============================================================
 // STREAK RULE
-// A day counts when at least 80% of its tasks are completed.
 // ============================================================
 
-const STREAK_COMPLETION_THRESHOLD = 80;
+const STREAK_COMPLETION_THRESHOLD =
+    80;
 
 
-// ============================================================
-// CHECK WHETHER A DAY QUALIFIES FOR STREAK
-// ============================================================
+function qualifiesForStreak(
+    stats
+) {
 
-async function isStreakDay(dateString) {
-
-    const stats =
-        await getDailyStatistics(
-            dateString
-        );
-
-
-    // No tasks = not a productivity day
-
-    if (stats.total === 0) {
+    if (
+        stats.total === 0
+    ) {
 
         return false;
 
@@ -567,8 +630,12 @@ async function isStreakDay(dateString) {
 
 
     return (
-        stats.percentage >=
-        STREAK_COMPLETION_THRESHOLD
+        stats.completed /
+        stats.total
+    ) >=
+    (
+        STREAK_COMPLETION_THRESHOLD /
+        100
     );
 
 }
@@ -578,13 +645,18 @@ async function isStreakDay(dateString) {
 // CURRENT STREAK
 // ============================================================
 
-async function calculateCurrentStreak() {
+async function calculateCurrentStreak(
+    tasks = null
+) {
 
-    let streak = 0;
+    const allTasks =
+        tasks ||
+        await getAllTasks();
 
 
     const today =
         new Date();
+
 
     today.setHours(
         0,
@@ -594,34 +666,23 @@ async function calculateCurrentStreak() {
     );
 
 
-    // Check today first
-
-    const todayString =
-        getDateString(today);
-
-
     const todayStats =
-        await getDailyStatistics(
-            todayString
+        buildDailyStatistics(
+            getDateString(
+                today
+            ),
+            allTasks
         );
 
-
-    /*
-        If today has tasks and isn't
-        completed enough, the streak
-        is currently broken.
-
-        If today has no tasks yet,
-        we check from yesterday.
-    */
 
     if (
         todayStats.total > 0
     ) {
 
         if (
-            todayStats.percentage <
-            STREAK_COMPLETION_THRESHOLD
+            !qualifiesForStreak(
+                todayStats
+            )
         ) {
 
             return 0;
@@ -639,19 +700,30 @@ async function calculateCurrentStreak() {
     }
 
 
+    let streak =
+        0;
+
+
     while (true) {
 
         const dateString =
-            getDateString(today);
-
-
-        const qualifies =
-            await isStreakDay(
-                dateString
+            getDateString(
+                today
             );
 
 
-        if (!qualifies) {
+        const stats =
+            buildDailyStatistics(
+                dateString,
+                allTasks
+            );
+
+
+        if (
+            !qualifiesForStreak(
+                stats
+            )
+        ) {
 
             break;
 
@@ -677,14 +749,34 @@ async function calculateCurrentStreak() {
 // LONGEST STREAK
 // ============================================================
 
-async function calculateLongestStreak() {
+async function calculateLongestStreak(
+    tasks = null
+) {
 
     const allTasks =
+        tasks ||
         await getAllTasks();
 
 
+    const todayString =
+        getTodayStatisticsDate();
+
+
+    const recordedTasks =
+        allTasks.filter(
+            function(task) {
+
+                return (
+                    task.date <=
+                    todayString
+                );
+
+            }
+        );
+
+
     if (
-        allTasks.length === 0
+        recordedTasks.length === 0
     ) {
 
         return 0;
@@ -692,17 +784,15 @@ async function calculateLongestStreak() {
     }
 
 
-    // Find earliest task date
-
     let earliestDate =
         null;
 
 
-    allTasks.forEach(
+    recordedTasks.forEach(
         function(task) {
 
             const date =
-                statisticsSafeDate(
+                parseStatisticsDate(
                     task.date
                 );
 
@@ -712,7 +802,8 @@ async function calculateLongestStreak() {
                 date < earliestDate
             ) {
 
-                earliestDate = date;
+                earliestDate =
+                    date;
 
             }
 
@@ -739,9 +830,12 @@ async function calculateLongestStreak() {
     );
 
 
-    let longest = 0;
+    let longest =
+        0;
 
-    let current = 0;
+
+    let current =
+        0;
 
 
     const cursor =
@@ -754,21 +848,23 @@ async function calculateLongestStreak() {
         cursor <= today
     ) {
 
-        const dateString =
-            getDateString(
-                cursor
+        const stats =
+            buildDailyStatistics(
+                getDateString(
+                    cursor
+                ),
+                recordedTasks
             );
 
 
-        const qualifies =
-            await isStreakDay(
-                dateString
-            );
-
-
-        if (qualifies) {
+        if (
+            qualifiesForStreak(
+                stats
+            )
+        ) {
 
             current++;
+
 
             longest =
                 Math.max(
@@ -798,43 +894,13 @@ async function calculateLongestStreak() {
 
 
 // ============================================================
-// SAFE DATE PARSER
+// PRODUCTIVITY SCORE
 // ============================================================
 
-function statisticsSafeDate(
-    dateString
+function calculateProductivityScore(
+    weekly,
+    currentStreak
 ) {
-
-    const parts =
-        dateString.split("-");
-
-
-    return new Date(
-        Number(parts[0]),
-        Number(parts[1]) - 1,
-        Number(parts[2])
-    );
-
-}
-
-
-// ============================================================
-// PRODUCTIVITY SCORE
-// ============================================================
-
-// ============================================================
-// PRODUCTIVITY SCORE
-// ============================================================
-
-async function getProductivityScore() {
-
-    const weekly =
-        await getWeeklySummary();
-
-
-    const streak =
-        await calculateCurrentStreak();
-
 
     if (
         weekly.totalTasks === 0
@@ -845,23 +911,9 @@ async function getProductivityScore() {
     }
 
 
-    /*
-        Base score:
-        Weekly completion percentage
-
-        Streak bonus:
-        2 points per qualifying streak day
-
-        Maximum bonus:
-        10 points
-
-        Maximum score:
-        100
-    */
-
     const streakBonus =
         Math.min(
-            streak * 2,
+            currentStreak * 2,
             10
         );
 
@@ -876,32 +928,69 @@ async function getProductivityScore() {
 
 }
 
+
 // ============================================================
-// COMPLETE STATISTICS DASHBOARD DATA
+// COMPLETE STATISTICS DASHBOARD
 // ============================================================
 
 async function getStatisticsDashboardData() {
 
-    const [
-        weekly,
-        monthly,
-        allTime,
-        bestDay,
-        average,
-        currentStreak,
-        longestStreak,
-        productivityScore
-    ] =
-        await Promise.all([
-            getWeeklySummary(),
-            getMonthlySummary(),
-            getAllTimeSummary(),
-            getBestProductivityDay(),
-            getAverageDailyCompletion(),
-            calculateCurrentStreak(),
-            calculateLongestStreak(),
-            getProductivityScore()
-        ]);
+    /*
+        Read all tasks once and perform
+        the dashboard calculations in memory.
+    */
+
+    const allTasks =
+        await getAllTasks();
+
+
+    const weekly =
+        await getWeeklySummary(
+            allTasks
+        );
+
+
+    const monthly =
+        await getMonthlySummary(
+            allTasks
+        );
+
+
+    const allTime =
+        await getAllTimeSummary(
+            allTasks
+        );
+
+
+    const bestDay =
+        await getBestProductivityDay(
+            allTasks
+        );
+
+
+    const average =
+        await getAverageDailyCompletion(
+            allTasks
+        );
+
+
+    const currentStreak =
+        await calculateCurrentStreak(
+            allTasks
+        );
+
+
+    const longestStreak =
+        await calculateLongestStreak(
+            allTasks
+        );
+
+
+    const productivityScore =
+        calculateProductivityScore(
+            weekly,
+            currentStreak
+        );
 
 
     return {
