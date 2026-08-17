@@ -7,110 +7,31 @@
 // DOM
 // ============================================================
 
-const addTaskButton =
-    document.getElementById("addTaskButton");
-
-const taskModal =
-    document.getElementById("taskModal");
-
-const closeModal =
-    document.getElementById("closeModal");
-
-const cancelTask =
-    document.getElementById("cancelTask");
-
-const saveTask =
-    document.getElementById("saveTask");
-
-const taskInput =
-    document.getElementById("taskInput");
-
-const taskDate =
-    document.getElementById("taskDate");
-
-const customTaskDate =
-    document.getElementById("customTaskDate");
-
-const repeatSelect =
-    document.getElementById("repeatSelect");
-
-const taskList =
-    document.getElementById("taskList");
-
-const progressPercentage =
-    document.getElementById(
-        "progressPercentage"
-    );
-
-const progressCircleText =
-    document.getElementById(
-        "progressCircleText"
-    );
-
-const progressFill =
-    document.getElementById(
-        "progressFill"
-    );
-
-const completedSummary =
-    document.getElementById(
-        "completedSummary"
-    );
-
-const pendingSummary =
-    document.getElementById(
-        "pendingSummary"
-    );
-
-const taskCount =
-    document.getElementById(
-        "taskCount"
-    );
-
-const currentDate =
-    document.getElementById(
-        "currentDate"
-    );
-
-const greeting =
-    document.getElementById(
-        "greeting"
-    );
-
-const themeButton =
-    document.getElementById(
-        "themeButton"
-    );
-
-const settingsThemeButton =
-    document.getElementById(
-        "settingsThemeButton"
-    );
-
-const characterCount =
-    document.getElementById(
-        "characterCount"
-    );
-
-const modalTitle =
-    document.getElementById(
-        "modalTitle"
-    );
-
-const deleteModal =
-    document.getElementById(
-        "deleteModal"
-    );
-
-const cancelDelete =
-    document.getElementById(
-        "cancelDelete"
-    );
-
-const confirmDelete =
-    document.getElementById(
-        "confirmDelete"
-    );
+const addTaskButton = document.getElementById("addTaskButton");
+const taskModal = document.getElementById("taskModal");
+const closeModal = document.getElementById("closeModal");
+const cancelTask = document.getElementById("cancelTask");
+const saveTask = document.getElementById("saveTask");
+const taskInput = document.getElementById("taskInput");
+const taskDate = document.getElementById("taskDate");
+const customTaskDate = document.getElementById("customTaskDate");
+const repeatSelect = document.getElementById("repeatSelect");
+const taskList = document.getElementById("taskList");
+const progressPercentage = document.getElementById("progressPercentage");
+const progressCircleText = document.getElementById("progressCircleText");
+const progressFill = document.getElementById("progressFill");
+const completedSummary = document.getElementById("completedSummary");
+const pendingSummary = document.getElementById("pendingSummary");
+const taskCount = document.getElementById("taskCount");
+const currentDate = document.getElementById("currentDate");
+const greeting = document.getElementById("greeting");
+const themeButton = document.getElementById("themeButton");
+const settingsThemeButton = document.getElementById("settingsThemeButton");
+const characterCount = document.getElementById("characterCount");
+const modalTitle = document.getElementById("modalTitle");
+const deleteModal = document.getElementById("deleteModal");
+const cancelDelete = document.getElementById("cancelDelete");
+const confirmDelete = document.getElementById("confirmDelete");
 
 
 // ============================================================
@@ -118,9 +39,7 @@ const confirmDelete =
 // ============================================================
 
 let currentTasks = [];
-
 let editingTaskId = null;
-
 let deletingTaskId = null;
 
 
@@ -132,15 +51,43 @@ initializeHistory();
 
 
 // ============================================================
-// DATE
+// DATE HELPERS
 // ============================================================
+
+function formatTaskDate(date) {
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+
+}
+
+
+function getTodayDateValue() {
+
+    return formatTaskDate(new Date());
+
+}
+
+
+function getTomorrowDateValue() {
+
+    const tomorrow = new Date();
+
+    tomorrow.setDate(
+        tomorrow.getDate() + 1
+    );
+
+    return formatTaskDate(tomorrow);
+
+}
+
 
 function getTodayString() {
 
-    const date =
-        new Date();
-
-    return date.toLocaleDateString(
+    return new Date().toLocaleDateString(
         "en-IN",
         {
             weekday: "long",
@@ -155,17 +102,24 @@ function getTodayString() {
 
 function updateDate() {
 
-    currentDate.textContent =
-        getTodayString();
+    if (currentDate) {
+
+        currentDate.textContent =
+            getTodayString();
+
+    }
 
 }
 
 
 function updateGreeting() {
 
+    if (!greeting) {
+        return;
+    }
+
     const hour =
         new Date().getHours();
-
 
     if (hour < 12) {
 
@@ -192,83 +146,13 @@ function updateGreeting() {
 
 
 // ============================================================
-// DATE HELPERS
-// ============================================================
-
-function formatTaskDate(date) {
-
-    const year =
-        date.getFullYear();
-
-
-    const month =
-        String(
-            date.getMonth() + 1
-        ).padStart(
-            2,
-            "0"
-        );
-
-
-    const day =
-        String(
-            date.getDate()
-        ).padStart(
-            2,
-            "0"
-        );
-
-
-    return `${year}-${month}-${day}`;
-
-}
-
-
-function getTodayDateValue() {
-
-    return formatTaskDate(
-        new Date()
-    );
-
-}
-
-
-function getTomorrowDateValue() {
-
-    const tomorrow =
-        new Date();
-
-
-    tomorrow.setDate(
-        tomorrow.getDate() + 1
-    );
-
-
-    return formatTaskDate(
-        tomorrow
-    );
-
-}
-
-
-// ============================================================
 // TASK DATE SELECTION
 // ============================================================
 
 function getTaskDateValue() {
 
-    if (!taskDate) {
-
-        return getTodayDateValue();
-
-    }
-
-
-    // ----------------------------
-    // TODAY
-    // ----------------------------
-
     if (
+        !taskDate ||
         taskDate.value === "today"
     ) {
 
@@ -276,10 +160,6 @@ function getTaskDateValue() {
 
     }
 
-
-    // ----------------------------
-    // TOMORROW
-    // ----------------------------
 
     if (
         taskDate.value === "tomorrow"
@@ -289,10 +169,6 @@ function getTaskDateValue() {
 
     }
 
-
-    // ----------------------------
-    // CUSTOM DATE
-    // ----------------------------
 
     if (
         taskDate.value === "custom"
@@ -309,15 +185,10 @@ function getTaskDateValue() {
 
         }
 
-
         return customTaskDate.value;
 
     }
 
-
-    // ----------------------------
-    // DEFAULT
-    // ----------------------------
 
     return getTodayDateValue();
 
@@ -325,8 +196,49 @@ function getTaskDateValue() {
 
 
 // ============================================================
-// CUSTOM DATE PICKER
+// CUSTOM DATE INPUT
 // ============================================================
+
+function configureCustomDateInput(
+    minDate,
+    value = ""
+) {
+
+    if (!customTaskDate) {
+        return;
+    }
+
+    customTaskDate.min =
+        minDate || "";
+
+    customTaskDate.value =
+        value || "";
+
+    customTaskDate.classList.remove(
+        "hidden"
+    );
+
+}
+
+
+function hideCustomDateInput() {
+
+    if (!customTaskDate) {
+        return;
+    }
+
+    customTaskDate.classList.add(
+        "hidden"
+    );
+
+    customTaskDate.value = "";
+
+    customTaskDate.removeAttribute(
+        "min"
+    );
+
+}
+
 
 if (taskDate) {
 
@@ -338,48 +250,19 @@ if (taskDate) {
                 taskDate.value === "custom"
             ) {
 
-                if (customTaskDate) {
-
-                    customTaskDate.classList.remove(
-                        "hidden"
-                    );
-
-
-                    // Don't allow dates
-                    // before tomorrow.
-
-                    customTaskDate.min =
-                        getTomorrowDateValue();
-
-
-                    // Automatically select
-                    // tomorrow if no date
-                    // has been selected.
-
-                    if (
-                        !customTaskDate.value
-                    ) {
-
-                        customTaskDate.value =
-                            getTomorrowDateValue();
-
-                    }
-
-                }
+                configureCustomDateInput(
+                    getTomorrowDateValue(),
+                    customTaskDate &&
+                    customTaskDate.value
+                        ? customTaskDate.value
+                        : getTomorrowDateValue()
+                );
 
             }
 
             else {
 
-                if (customTaskDate) {
-
-                    customTaskDate.classList.add(
-                        "hidden"
-                    );
-
-                    customTaskDate.value = "";
-
-                }
+                hideCustomDateInput();
 
             }
 
@@ -397,7 +280,6 @@ const navItems =
     document.querySelectorAll(
         ".nav-item"
     );
-
 
 const pages =
     document.querySelectorAll(
@@ -458,10 +340,6 @@ navItems.forEach(
                 );
 
 
-                // ============================
-                // LOAD HISTORY
-                // ============================
-
                 if (
                     pageId === "historyPage"
                 ) {
@@ -490,25 +368,22 @@ navItems.forEach(
 
 function applyTheme(theme) {
 
-    if (theme === "dark") {
+    const dark =
+        theme === "dark";
 
-        document.body.classList.add(
-            "dark"
-        );
 
-        themeButton.textContent =
-            "☀️";
+    document.body.classList.toggle(
+        "dark",
+        dark
+    );
 
-    }
 
-    else {
-
-        document.body.classList.remove(
-            "dark"
-        );
+    if (themeButton) {
 
         themeButton.textContent =
-            "🌙";
+            dark
+                ? "☀️"
+                : "🌙";
 
     }
 
@@ -535,21 +410,31 @@ function toggleTheme() {
     );
 
 
-    applyTheme(newTheme);
+    applyTheme(
+        newTheme
+    );
 
 }
 
 
-themeButton.addEventListener(
-    "click",
-    toggleTheme
-);
+if (themeButton) {
+
+    themeButton.addEventListener(
+        "click",
+        toggleTheme
+    );
+
+}
 
 
-settingsThemeButton.addEventListener(
-    "click",
-    toggleTheme
-);
+if (settingsThemeButton) {
+
+    settingsThemeButton.addEventListener(
+        "click",
+        toggleTheme
+    );
+
+}
 
 
 function loadTheme() {
@@ -568,7 +453,7 @@ function loadTheme() {
 
 
 // ============================================================
-// MODAL
+// MODAL DATE STATE
 // ============================================================
 
 function resetTaskDateFields() {
@@ -581,15 +466,7 @@ function resetTaskDateFields() {
     }
 
 
-    if (customTaskDate) {
-
-        customTaskDate.value = "";
-
-        customTaskDate.classList.add(
-            "hidden"
-        );
-
-    }
+    hideCustomDateInput();
 
 }
 
@@ -645,97 +522,61 @@ function openEditTaskModal(task) {
         task.title;
 
 
-    // ========================================================
-    // LOAD EXISTING TASK DATE
-    // ========================================================
+    const today =
+        getTodayDateValue();
+
+    const tomorrow =
+        getTomorrowDateValue();
+
 
     if (
         taskDate &&
-        task.date
+        task.date === today
     ) {
 
-        const today =
-            getTodayDateValue();
+        taskDate.value =
+            "today";
 
-        const tomorrow =
-            getTomorrowDateValue();
-
-
-        if (
-            task.date === today
-        ) {
-
-            taskDate.value =
-                "today";
-
-            if (customTaskDate) {
-
-                customTaskDate.value = "";
-
-                customTaskDate.classList.add(
-                    "hidden"
-                );
-
-            }
-
-        }
-
-        else if (
-            task.date === tomorrow
-        ) {
-
-            taskDate.value =
-                "tomorrow";
-
-            if (customTaskDate) {
-
-                customTaskDate.value = "";
-
-                customTaskDate.classList.add(
-                    "hidden"
-                );
-
-            }
-
-        }
-
-        else {
-
-            taskDate.value =
-                "custom";
-
-
-            if (customTaskDate) {
-
-                customTaskDate.classList.remove(
-                    "hidden"
-                );
-
-                customTaskDate.min =
-                    tomorrow;
-
-                customTaskDate.value =
-                    task.date;
-
-            }
-
-        }
+        hideCustomDateInput();
 
     }
 
-    else {
+    else if (
+        taskDate &&
+        task.date === tomorrow
+    ) {
 
-        resetTaskDateFields();
+        taskDate.value =
+            "tomorrow";
+
+        hideCustomDateInput();
+
+    }
+
+    else if (taskDate) {
+
+        taskDate.value =
+            "custom";
+
+
+        configureCustomDateInput(
+            task.date < today
+                ? task.date
+                : today,
+            task.date
+        );
 
     }
 
 
-    // Editing a task should
-    // not automatically create
-    // another recurring task.
+    /*
+        Editing an occurrence does not
+        silently modify the entire recurring series.
+    */
 
     repeatSelect.value =
         "none";
+
 
     updateCharacterCount();
 
@@ -776,38 +617,54 @@ function closeTaskModal() {
 }
 
 
-addTaskButton.addEventListener(
-    "click",
-    openAddTaskModal
-);
+if (addTaskButton) {
+
+    addTaskButton.addEventListener(
+        "click",
+        openAddTaskModal
+    );
+
+}
 
 
-closeModal.addEventListener(
-    "click",
-    closeTaskModal
-);
+if (closeModal) {
+
+    closeModal.addEventListener(
+        "click",
+        closeTaskModal
+    );
+
+}
 
 
-cancelTask.addEventListener(
-    "click",
-    closeTaskModal
-);
+if (cancelTask) {
+
+    cancelTask.addEventListener(
+        "click",
+        closeTaskModal
+    );
+
+}
 
 
-taskModal.addEventListener(
-    "click",
-    function(event) {
+if (taskModal) {
 
-        if (
-            event.target === taskModal
-        ) {
+    taskModal.addEventListener(
+        "click",
+        function(event) {
 
-            closeTaskModal();
+            if (
+                event.target === taskModal
+            ) {
+
+                closeTaskModal();
+
+            }
 
         }
+    );
 
-    }
-);
+}
 
 
 // ============================================================
@@ -816,23 +673,42 @@ taskModal.addEventListener(
 
 function updateCharacterCount() {
 
-    characterCount.textContent =
-        taskInput.value.length;
+    if (
+        characterCount &&
+        taskInput
+    ) {
+
+        characterCount.textContent =
+            taskInput.value.length;
+
+    }
 
 }
 
 
-taskInput.addEventListener(
-    "input",
-    updateCharacterCount
-);
+if (taskInput) {
+
+    taskInput.addEventListener(
+        "input",
+        updateCharacterCount
+    );
+
+}
 
 
 // ============================================================
 // SAVE TASK
 // ============================================================
 
+let saveInProgress = false;
+
+
 async function saveTaskHandler() {
+
+    if (saveInProgress) {
+        return;
+    }
+
 
     const title =
         taskInput.value.trim();
@@ -849,20 +725,18 @@ async function saveTaskHandler() {
 
     try {
 
+        saveInProgress = true;
+
         saveTask.disabled =
             true;
 
-
-        // ====================================================
-        // SELECT DATE
-        // ====================================================
 
         const selectedDate =
             getTaskDateValue();
 
 
         // ====================================================
-        // EDIT EXISTING TASK
+        // EDIT
         // ====================================================
 
         if (
@@ -879,7 +753,7 @@ async function saveTaskHandler() {
 
 
         // ====================================================
-        // CREATE NEW TASK
+        // CREATE
         // ====================================================
 
         else {
@@ -887,10 +761,6 @@ async function saveTaskHandler() {
             const frequency =
                 repeatSelect.value;
 
-
-            // ------------------------------------------------
-            // ONE-TIME TASK
-            // ------------------------------------------------
 
             if (
                 frequency === "none"
@@ -903,27 +773,18 @@ async function saveTaskHandler() {
 
             }
 
-
-            // ------------------------------------------------
-            // RECURRING TASK
-            // ------------------------------------------------
-
             else {
 
-                // Create the first task
-                // on the selected date.
-
-                await createTask(
-                    title,
-                    selectedDate
-                );
-
-
-                // Create recurring template.
+                /*
+                    The recurring template and
+                    first occurrence are created
+                    in one IndexedDB transaction.
+                */
 
                 await createRecurringTask(
                     title,
-                    frequency
+                    frequency,
+                    selectedDate
                 );
 
             }
@@ -931,13 +792,11 @@ async function saveTaskHandler() {
         }
 
 
-        // ====================================================
-        // CLOSE + REFRESH
-        // ====================================================
-
         closeTaskModal();
 
         await refreshTasks();
+
+        await updateStreak();
 
     }
 
@@ -958,6 +817,8 @@ async function saveTaskHandler() {
 
     finally {
 
+        saveInProgress = false;
+
         saveTask.disabled =
             false;
 
@@ -966,35 +827,47 @@ async function saveTaskHandler() {
 }
 
 
-saveTask.addEventListener(
-    "click",
-    saveTaskHandler
-);
+if (saveTask) {
+
+    saveTask.addEventListener(
+        "click",
+        saveTaskHandler
+    );
+
+}
 
 
-taskInput.addEventListener(
-    "keydown",
-    function(event) {
+if (taskInput) {
 
-        if (
-            event.key === "Enter"
-        ) {
+    taskInput.addEventListener(
+        "keydown",
+        function(event) {
 
-            saveTaskHandler();
+            if (
+                event.key === "Enter"
+            ) {
+
+                event.preventDefault();
+
+                saveTaskHandler();
+
+            }
+
+
+            if (
+                event.key === "Escape"
+            ) {
+
+                event.preventDefault();
+
+                closeTaskModal();
+
+            }
 
         }
+    );
 
-
-        if (
-            event.key === "Escape"
-        ) {
-
-            closeTaskModal();
-
-        }
-
-    }
-);
+}
 
 
 // ============================================================
@@ -1021,6 +894,7 @@ async function refreshTasks() {
             "Unable to load tasks:",
             error
         );
+
 
         showDatabaseError();
 
@@ -1070,6 +944,11 @@ function renderTasks() {
             .map(
                 function(task) {
 
+                    const recurring =
+                        task.recurringTaskId !== null &&
+                        task.recurringTaskId !== undefined;
+
+
                     return `
 
                         <div
@@ -1109,15 +988,33 @@ function renderTasks() {
                                     class="task-action"
                                     data-edit-id="${task.id}"
                                     title="Edit task"
+                                    type="button"
                                 >
                                     ✏️
                                 </button>
+
+
+                                ${
+                                    recurring
+                                        ? `
+                                            <button
+                                                class="task-action"
+                                                data-stop-repeat-id="${task.recurringTaskId}"
+                                                title="Stop repeating this task"
+                                                type="button"
+                                            >
+                                                ⏹️
+                                            </button>
+                                          `
+                                        : ""
+                                }
 
 
                                 <button
                                     class="task-action delete"
                                     data-delete-id="${task.id}"
                                     title="Delete task"
+                                    type="button"
                                 >
                                     🗑️
                                 </button>
@@ -1191,6 +1088,22 @@ function attachTaskListeners() {
             }
         );
 
+
+    document
+        .querySelectorAll(
+            "[data-stop-repeat-id]"
+        )
+        .forEach(
+            function(button) {
+
+                button.addEventListener(
+                    "click",
+                    handleStopRepeat
+                );
+
+            }
+        );
+
 }
 
 
@@ -1212,7 +1125,10 @@ async function handleTaskToggle(event) {
             id
         );
 
+
         await refreshTasks();
+
+        await updateStreak();
 
     }
 
@@ -1257,6 +1173,67 @@ function handleTaskEdit(event) {
 
 
 // ============================================================
+// STOP REPEAT
+// ============================================================
+
+async function handleStopRepeat(event) {
+
+    const recurringTaskId =
+        Number(
+            event.currentTarget.dataset.stopRepeatId
+        );
+
+
+    if (
+        !Number.isFinite(
+            recurringTaskId
+        )
+    ) {
+
+        return;
+
+    }
+
+
+    const confirmed =
+        window.confirm(
+            "Stop this recurring task? Existing task history will remain, " +
+            "but no new occurrences will be created."
+        );
+
+
+    if (!confirmed) {
+        return;
+    }
+
+
+    try {
+
+        await stopRecurringTask(
+            recurringTaskId
+        );
+
+
+        await refreshTasks();
+
+    }
+
+    catch (error) {
+
+        console.error(error);
+
+
+        alert(
+            error.message ||
+            "Unable to stop the recurring task."
+        );
+
+    }
+
+}
+
+
+// ============================================================
 // DELETE MODAL
 // ============================================================
 
@@ -1286,67 +1263,84 @@ function closeDeleteModal() {
 }
 
 
-cancelDelete.addEventListener(
-    "click",
-    closeDeleteModal
-);
+if (cancelDelete) {
+
+    cancelDelete.addEventListener(
+        "click",
+        closeDeleteModal
+    );
+
+}
 
 
-deleteModal.addEventListener(
-    "click",
-    function(event) {
+if (deleteModal) {
 
-        if (
-            event.target === deleteModal
-        ) {
+    deleteModal.addEventListener(
+        "click",
+        function(event) {
 
-            closeDeleteModal();
+            if (
+                event.target === deleteModal
+            ) {
 
-        }
+                closeDeleteModal();
 
-    }
-);
-
-
-confirmDelete.addEventListener(
-    "click",
-    async function() {
-
-        if (
-            deletingTaskId === null
-        ) {
-
-            return;
+            }
 
         }
+    );
+
+}
 
 
-        try {
+if (confirmDelete) {
 
-            await removeTask(
-                deletingTaskId
-            );
+    confirmDelete.addEventListener(
+        "click",
+        async function() {
 
-            closeDeleteModal();
+            if (
+                deletingTaskId === null
+            ) {
 
-            await refreshTasks();
+                return;
+
+            }
+
+
+            try {
+
+                await removeTask(
+                    deletingTaskId
+                );
+
+
+                closeDeleteModal();
+
+                await refreshTasks();
+
+                await updateStreak();
+
+            }
+
+            catch (error) {
+
+                console.error(
+                    error
+                );
+
+
+                alert(
+                    error.message ||
+                    "Unable to delete the task."
+                );
+
+            }
 
         }
+    );
 
-        catch (error) {
-
-            console.error(
-                error
-            );
-
-            alert(
-                "Unable to delete the task."
-            );
-
-        }
-
-    }
-);
+}
 
 
 // ============================================================
@@ -1420,19 +1414,22 @@ async function updateStreak() {
 
     try {
 
-        /*
-            Use the new 80% completion rule
-            from statistics.js.
-        */
-
         const streak =
             await calculateCurrentStreak();
 
 
-        document.getElementById(
-            "streakCount"
-        ).textContent =
-            streak;
+        const element =
+            document.getElementById(
+                "streakCount"
+            );
+
+
+        if (element) {
+
+            element.textContent =
+                streak;
+
+        }
 
     }
 
@@ -1461,7 +1458,9 @@ function escapeHTML(text) {
 
 
     element.textContent =
-        text;
+        String(
+            text ?? ""
+        );
 
 
     return element.innerHTML;
@@ -1514,23 +1513,16 @@ async function startApplication() {
 
     try {
 
-        // 1. Open database
-
         await openDatabase();
 
-
-        // 2. Generate today's recurring
-        //    task copies
+        /*
+            Repair old recurring data before generating
+            new occurrences.
+        */
 
         await generateRecurringTasksForToday();
 
-
-        // 3. Load today's tasks
-
         await refreshTasks();
-
-
-        // 4. Calculate current streak
 
         await updateStreak();
 
@@ -1547,6 +1539,8 @@ async function startApplication() {
             "TaskFlow startup failed:",
             error
         );
+
+        showDatabaseError();
 
     }
 
@@ -1568,10 +1562,6 @@ async function loadStatisticsDashboard() {
             await getStatisticsDashboardData();
 
 
-        // ----------------------------
-        // Today
-        // ----------------------------
-
         const today =
             await getDailyStatistics(
                 getDateString(
@@ -1580,80 +1570,64 @@ async function loadStatisticsDashboard() {
             );
 
 
-        document.getElementById(
-            "statsTodayPercentage"
-        ).textContent =
-            `${today.percentage}%`;
+        const todayPercentage =
+            document.getElementById(
+                "statsTodayPercentage"
+            );
 
 
-        document.getElementById(
-            "statsTodayText"
-        ).textContent =
-            `${today.completed} completed · ${today.pending} pending`;
+        const todayText =
+            document.getElementById(
+                "statsTodayText"
+            );
 
 
-        document.getElementById(
-            "statsCompleted"
-        ).textContent =
-            today.completed;
+        const statsCompleted =
+            document.getElementById(
+                "statsCompleted"
+            );
 
 
-        document.getElementById(
-            "statsTotal"
-        ).textContent =
-            today.total;
+        const statsTotal =
+            document.getElementById(
+                "statsTotal"
+            );
 
 
-        document.getElementById(
-            "statsCurrentStreak"
-        ).textContent =
-            data.currentStreak;
+        const currentStreak =
+            document.getElementById(
+                "statsCurrentStreak"
+            );
 
 
-        document.getElementById(
-            "statsLongestStreak"
-        ).textContent =
-            data.longestStreak;
+        const longestStreak =
+            document.getElementById(
+                "statsLongestStreak"
+            );
 
 
-        // ----------------------------
-        // Weekly
-        // ----------------------------
-
-        document.getElementById(
-            "weeklyPercentage"
-        ).textContent =
-            `${data.weekly.percentage}%`;
+        const weeklyPercentage =
+            document.getElementById(
+                "weeklyPercentage"
+            );
 
 
-        // ----------------------------
-        // Monthly
-        // ----------------------------
-
-        document.getElementById(
-            "monthlyPercentage"
-        ).textContent =
-            `${data.monthly.percentage}%`;
+        const monthlyPercentage =
+            document.getElementById(
+                "monthlyPercentage"
+            );
 
 
-        // ----------------------------
-        // Productivity score
-        // ----------------------------
-
-        const score =
-            data.productivityScore;
+        const productivityScore =
+            document.getElementById(
+                "productivityScore"
+            );
 
 
-        document.getElementById(
-            "productivityScore"
-        ).textContent =
-            score;
-
-
-        document.getElementById(
-            "scoreCircle"
-        ).textContent =
-            score;
+        const scoreCircle =
+            document.getElementById(
+                "scoreCircle"
+            );
 
 
         const message =
@@ -1662,51 +1636,139 @@ async function loadStatisticsDashboard() {
             );
 
 
-        if (score >= 90) {
+        if (todayPercentage) {
 
-            message.textContent =
-                "Outstanding! You're operating at your best. 🚀";
-
-        }
-
-        else if (score >= 75) {
-
-            message.textContent =
-                "Excellent work. Keep the momentum going! 🔥";
-
-        }
-
-        else if (score >= 50) {
-
-            message.textContent =
-                "You're making progress. Keep pushing! 💪";
-
-        }
-
-        else if (score > 0) {
-
-            message.textContent =
-                "Every completed task counts. Keep going! 🌱";
-
-        }
-
-        else {
-
-            message.textContent =
-                "Start completing tasks to build your score.";
+            todayPercentage.textContent =
+                `${today.percentage}%`;
 
         }
 
 
-        // ----------------------------
-        // Charts
-        // ----------------------------
+        if (todayText) {
 
-        createTodayChart(today);
+            todayText.textContent =
+                `${today.completed} completed · ${today.pending} pending`;
+
+        }
+
+
+        if (statsCompleted) {
+
+            statsCompleted.textContent =
+                today.completed;
+
+        }
+
+
+        if (statsTotal) {
+
+            statsTotal.textContent =
+                today.total;
+
+        }
+
+
+        if (currentStreak) {
+
+            currentStreak.textContent =
+                data.currentStreak;
+
+        }
+
+
+        if (longestStreak) {
+
+            longestStreak.textContent =
+                data.longestStreak;
+
+        }
+
+
+        if (weeklyPercentage) {
+
+            weeklyPercentage.textContent =
+                `${data.weekly.percentage}%`;
+
+        }
+
+
+        if (monthlyPercentage) {
+
+            monthlyPercentage.textContent =
+                `${data.monthly.percentage}%`;
+
+        }
+
+
+        const score =
+            data.productivityScore;
+
+
+        if (productivityScore) {
+
+            productivityScore.textContent =
+                score;
+
+        }
+
+
+        if (scoreCircle) {
+
+            scoreCircle.textContent =
+                score;
+
+        }
+
+
+        if (message) {
+
+            if (score >= 90) {
+
+                message.textContent =
+                    "Outstanding! You're operating at your best. 🚀";
+
+            }
+
+            else if (score >= 75) {
+
+                message.textContent =
+                    "Excellent work. Keep the momentum going! 🔥";
+
+            }
+
+            else if (score >= 50) {
+
+                message.textContent =
+                    "You're making progress. Keep pushing! 💪";
+
+            }
+
+            else if (score > 0) {
+
+                message.textContent =
+                    "Every completed task counts. Keep going! 🌱";
+
+            }
+
+            else {
+
+                message.textContent =
+                    "Start completing tasks to build your score.";
+
+            }
+
+        }
+
+
+        createTodayChart(
+            today
+        );
+
 
         createWeeklyChart(
             data.weekly.days
         );
+
 
         createMonthlyChart(
             data.monthly.days
@@ -1726,15 +1788,15 @@ async function loadStatisticsDashboard() {
 }
 
 
-// ============================================================
-// LOAD STATS WHEN NAVIGATION OPENS
-// ============================================================
-
-document
-    .querySelector(
+const statsNavItem =
+    document.querySelector(
         '[data-page="statsPage"]'
-    )
-    .addEventListener(
+    );
+
+
+if (statsNavItem) {
+
+    statsNavItem.addEventListener(
         "click",
         function() {
 
@@ -1745,6 +1807,8 @@ document
 
         }
     );
+
+}
 
 
 // ============================================================
