@@ -4,11 +4,17 @@
 // ============================================================
 
 const DB_NAME = "TaskFlowDB";
-const DB_VERSION = 3;
+
+const DB_VERSION = 5;
+
 const TASK_STORE = "tasks";
-const RECURRING_TASK_STORE = "recurringTasks";
+
+const RECURRING_TASK_STORE =
+    "recurringTasks";
 
 let db = null;
+
+let dbOpenPromise = null;
 
 
 // ============================================================
@@ -17,192 +23,371 @@ let db = null;
 
 function openDatabase() {
 
-    return new Promise((resolve, reject) => {
+    if (db) {
 
-        // If database is already open, reuse it
-        if (db) {
+        return Promise.resolve(
+            db
+        );
 
-            resolve(db);
-
-            return;
-
-        }
+    }
 
 
-        const request =
-            indexedDB.open(
-                DB_NAME,
-                DB_VERSION
+    if (dbOpenPromise) {
+
+        return dbOpenPromise;
+
+    }
+
+
+    dbOpenPromise =
+        new Promise(
+            function(resolve, reject) {
+
+                const request =
+                    indexedDB.open(
+                        DB_NAME,
+                        DB_VERSION
+                    );
+
+
+                // ====================================================
+                // DATABASE UPGRADE
+                // ====================================================
+
+                request.onupgradeneeded =
+                    function(event) {
+
+                        const database =
+                            event.target.result;
+
+
+                        // ====================================================
+                        // TASK STORE
+                        // ====================================================
+
+                        let taskStore;
+
+
+                        if (
+                            !database.objectStoreNames.contains(
+                                TASK_STORE
+                            )
+                        ) {
+
+                            taskStore =
+                                database.createObjectStore(
+                                    TASK_STORE,
+                                    {
+                                        keyPath: "id",
+                                        autoIncrement: true
+                                    }
+                                );
+
+                        }
+
+                        else {
+
+                            taskStore =
+                                event.target.transaction
+                                    .objectStore(
+                                        TASK_STORE
+                                    );
+
+                        }
+
+
+                        if (
+                            !taskStore.indexNames.contains(
+                                "date"
+                            )
+                        ) {
+
+                            taskStore.createIndex(
+                                "date",
+                                "date",
+                                {
+                                    unique: false
+                                }
+                            );
+
+                        }
+
+
+                        if (
+                            !taskStore.indexNames.contains(
+                                "completed"
+                            )
+                        ) {
+
+                            taskStore.createIndex(
+                                "completed",
+                                "completed",
+                                {
+                                    unique: false
+                                }
+                            );
+
+                        }
+
+
+                        if (
+                            !taskStore.indexNames.contains(
+                                "createdAt"
+                            )
+                        ) {
+
+                            taskStore.createIndex(
+                                "createdAt",
+                                "createdAt",
+                                {
+                                    unique: false
+                                }
+                            );
+
+                        }
+
+
+                        if (
+                            !taskStore.indexNames.contains(
+                                "recurringTaskId"
+                            )
+                        ) {
+
+                            taskStore.createIndex(
+                                "recurringTaskId",
+                                "recurringTaskId",
+                                {
+                                    unique: false
+                                }
+                            );
+
+                        }
+
+
+                        // ====================================================
+                        // RECURRING TASK STORE
+                        // ====================================================
+
+                        let recurringStore;
+
+
+                        if (
+                            !database.objectStoreNames.contains(
+                                RECURRING_TASK_STORE
+                            )
+                        ) {
+
+                            recurringStore =
+                                database.createObjectStore(
+                                    RECURRING_TASK_STORE,
+                                    {
+                                        keyPath: "id",
+                                        autoIncrement: true
+                                    }
+                                );
+
+                        }
+
+                        else {
+
+                            recurringStore =
+                                event.target.transaction
+                                    .objectStore(
+                                        RECURRING_TASK_STORE
+                                    );
+
+                        }
+
+
+                        if (
+                            !recurringStore.indexNames.contains(
+                                "frequency"
+                            )
+                        ) {
+
+                            recurringStore.createIndex(
+                                "frequency",
+                                "frequency",
+                                {
+                                    unique: false
+                                }
+                            );
+
+                        }
+
+
+                        if (
+                            !recurringStore.indexNames.contains(
+                                "active"
+                            )
+                        ) {
+
+                            recurringStore.createIndex(
+                                "active",
+                                "active",
+                                {
+                                    unique: false
+                                }
+                            );
+
+                        }
+
+
+                        if (
+                            !recurringStore.indexNames.contains(
+                                "createdAt"
+                            )
+                        ) {
+
+                            recurringStore.createIndex(
+                                "createdAt",
+                                "createdAt",
+                                {
+                                    unique: false
+                                }
+                            );
+
+                        }
+
+
+                        if (
+                            !recurringStore.indexNames.contains(
+                                "startDate"
+                            )
+                        ) {
+
+                            recurringStore.createIndex(
+                                "startDate",
+                                "startDate",
+                                {
+                                    unique: false
+                                }
+                            );
+
+                        }
+
+                    };
+
+
+                // ====================================================
+                // DATABASE SUCCESS
+                // ====================================================
+
+                request.onsuccess =
+                    function(event) {
+
+                        db =
+                            event.target.result;
+
+
+                        db.onversionchange =
+                            function() {
+
+                                db.close();
+
+                                db = null;
+
+                                dbOpenPromise = null;
+
+                                console.warn(
+                                    "TaskFlow database was upgraded in another tab."
+                                );
+
+                            };
+
+
+                        console.log(
+                            "TaskFlow database opened successfully."
+                        );
+
+
+                        resolve(
+                            db
+                        );
+
+                    };
+
+
+                // ====================================================
+                // DATABASE ERROR
+                // ====================================================
+
+                request.onerror =
+                    function(event) {
+
+                        console.error(
+                            "Unable to open TaskFlow database:",
+                            event.target.error
+                        );
+
+
+                        dbOpenPromise = null;
+
+
+                        reject(
+                            event.target.error
+                        );
+
+                    };
+
+
+                // ====================================================
+                // DATABASE BLOCKED
+                // ====================================================
+
+                request.onblocked =
+                    function() {
+
+                        console.warn(
+                            "TaskFlow database upgrade is blocked. " +
+                            "Close other TaskFlow tabs and try again."
+                        );
+
+                    };
+
+            }
+        );
+
+
+    return dbOpenPromise;
+
+}
+
+
+// ============================================================
+// TRANSACTION ERROR HANDLING
+// ============================================================
+
+function attachTransactionHandlers(
+    transaction,
+    reject
+) {
+
+    transaction.onerror =
+        function(event) {
+
+            reject(
+                event.target.error ||
+                transaction.error ||
+                new Error(
+                    "IndexedDB transaction failed."
+                )
             );
 
-
-        // ----------------------------------------------------
-        // CREATE / UPGRADE DATABASE STRUCTURE
-        // ----------------------------------------------------
-
-        request.onupgradeneeded =
-            function(event) {
-
-                const database =
-                    event.target.result;
+        };
 
 
-                // ====================================================
-                // TASKS STORE
-                // ====================================================
+    transaction.onabort =
+        function() {
 
-                if (
-                    !database.objectStoreNames.contains(
-                        TASK_STORE
-                    )
-                ) {
+            reject(
+                transaction.error ||
+                new Error(
+                    "IndexedDB transaction was aborted."
+                )
+            );
 
-                    const taskStore =
-                        database.createObjectStore(
-                            TASK_STORE,
-                            {
-                                keyPath: "id",
-                                autoIncrement: true
-                            }
-                        );
-
-
-                    taskStore.createIndex(
-                        "date",
-                        "date",
-                        {
-                            unique: false
-                        }
-                    );
-
-
-                    taskStore.createIndex(
-                        "completed",
-                        "completed",
-                        {
-                            unique: false
-                        }
-                    );
-
-
-                    taskStore.createIndex(
-                        "createdAt",
-                        "createdAt",
-                        {
-                            unique: false
-                        }
-                    );
-
-                }
-
-
-                // ====================================================
-                // RECURRING TASKS STORE
-                // ====================================================
-
-                if (
-                    !database.objectStoreNames.contains(
-                        RECURRING_TASK_STORE
-                    )
-                ) {
-
-                    const recurringStore =
-                        database.createObjectStore(
-                            RECURRING_TASK_STORE,
-                            {
-                                keyPath: "id",
-                                autoIncrement: true
-                            }
-                        );
-
-
-                    recurringStore.createIndex(
-                        "frequency",
-                        "frequency",
-                        {
-                            unique: false
-                        }
-                    );
-
-
-                    recurringStore.createIndex(
-                        "active",
-                        "active",
-                        {
-                            unique: false
-                        }
-                    );
-
-
-                    recurringStore.createIndex(
-                        "createdAt",
-                        "createdAt",
-                        {
-                            unique: false
-                        }
-                    );
-
-                }
-
-            };
-
-
-        // ----------------------------------------------------
-        // DATABASE SUCCESSFULLY OPENED
-        // ----------------------------------------------------
-
-        request.onsuccess =
-            function(event) {
-
-                db =
-                    event.target.result;
-
-
-                console.log(
-                    "TaskFlow database opened successfully."
-                );
-
-
-                resolve(db);
-
-            };
-
-
-        // ----------------------------------------------------
-        // DATABASE ERROR
-        // ----------------------------------------------------
-
-        request.onerror =
-            function(event) {
-
-                console.error(
-                    "Unable to open TaskFlow database:",
-                    event.target.error
-                );
-
-
-                reject(
-                    event.target.error
-                );
-
-            };
-
-
-        // ----------------------------------------------------
-        // DATABASE BLOCKED
-        // ----------------------------------------------------
-
-        request.onblocked =
-            function() {
-
-                console.warn(
-                    "TaskFlow database is blocked. " +
-                    "Please close other TaskFlow tabs."
-                );
-
-            };
-
-    });
+        };
 
 }
 
@@ -218,7 +403,7 @@ async function addTaskToDatabase(task) {
 
 
     return new Promise(
-        (resolve, reject) => {
+        function(resolve, reject) {
 
             const transaction =
                 database.transaction(
@@ -227,14 +412,18 @@ async function addTaskToDatabase(task) {
                 );
 
 
-            const store =
-                transaction.objectStore(
-                    TASK_STORE
-                );
+            attachTransactionHandlers(
+                transaction,
+                reject
+            );
 
 
             const request =
-                store.add(task);
+                transaction
+                    .objectStore(
+                        TASK_STORE
+                    )
+                    .add(task);
 
 
             request.onsuccess =
@@ -253,6 +442,163 @@ async function addTaskToDatabase(task) {
                     reject(
                         event.target.error
                     );
+
+                };
+
+        }
+    );
+
+}
+
+
+// ============================================================
+// CREATE RECURRING TASK + FIRST TASK ATOMICALLY
+// ============================================================
+
+async function addRecurringTaskWithFirstOccurrence(
+    recurringTask,
+    firstTask
+) {
+
+    const database =
+        await openDatabase();
+
+
+    return new Promise(
+        function(resolve, reject) {
+
+            let recurringId =
+                null;
+
+            let taskId =
+                null;
+
+            let settled =
+                false;
+
+
+            const transaction =
+                database.transaction(
+                    [
+                        TASK_STORE,
+                        RECURRING_TASK_STORE
+                    ],
+                    "readwrite"
+                );
+
+
+            transaction.oncomplete =
+                function() {
+
+                    if (settled) {
+                        return;
+                    }
+
+
+                    settled =
+                        true;
+
+
+                    resolve(
+                        {
+                            recurringTaskId:
+                                recurringId,
+
+                            taskId:
+                                taskId
+                        }
+                    );
+
+                };
+
+
+            transaction.onerror =
+                function(event) {
+
+                    if (settled) {
+                        return;
+                    }
+
+
+                    settled =
+                        true;
+
+
+                    reject(
+                        event.target.error ||
+                        transaction.error ||
+                        new Error(
+                            "Unable to create recurring task."
+                        )
+                    );
+
+                };
+
+
+            transaction.onabort =
+                function() {
+
+                    if (settled) {
+                        return;
+                    }
+
+
+                    settled =
+                        true;
+
+
+                    reject(
+                        transaction.error ||
+                        new Error(
+                            "Unable to create recurring task."
+                        )
+                    );
+
+                };
+
+
+            const recurringStore =
+                transaction.objectStore(
+                    RECURRING_TASK_STORE
+                );
+
+
+            const taskStore =
+                transaction.objectStore(
+                    TASK_STORE
+                );
+
+
+            const recurringRequest =
+                recurringStore.add(
+                    recurringTask
+                );
+
+
+            recurringRequest.onsuccess =
+                function(event) {
+
+                    recurringId =
+                        event.target.result;
+
+
+                    firstTask.recurringTaskId =
+                        recurringId;
+
+
+                    const taskRequest =
+                        taskStore.add(
+                            firstTask
+                        );
+
+
+                    taskRequest.onsuccess =
+                        function(event) {
+
+                            taskId =
+                                event.target.result;
+
+                        };
 
                 };
 
@@ -273,7 +619,7 @@ async function getTaskFromDatabase(id) {
 
 
     return new Promise(
-        (resolve, reject) => {
+        function(resolve, reject) {
 
             const transaction =
                 database.transaction(
@@ -282,14 +628,18 @@ async function getTaskFromDatabase(id) {
                 );
 
 
-            const store =
-                transaction.objectStore(
-                    TASK_STORE
-                );
+            attachTransactionHandlers(
+                transaction,
+                reject
+            );
 
 
             const request =
-                store.get(id);
+                transaction
+                    .objectStore(
+                        TASK_STORE
+                    )
+                    .get(id);
 
 
             request.onsuccess =
@@ -318,7 +668,7 @@ async function getTaskFromDatabase(id) {
 
 
 // ============================================================
-// GET TASKS FOR A SPECIFIC DATE
+// GET TASKS BY DATE
 // ============================================================
 
 async function getTasksByDate(date) {
@@ -328,7 +678,7 @@ async function getTasksByDate(date) {
 
 
     return new Promise(
-        (resolve, reject) => {
+        function(resolve, reject) {
 
             const transaction =
                 database.transaction(
@@ -337,25 +687,30 @@ async function getTasksByDate(date) {
                 );
 
 
-            const store =
-                transaction.objectStore(
-                    TASK_STORE
-                );
-
-
-            const index =
-                store.index("date");
+            attachTransactionHandlers(
+                transaction,
+                reject
+            );
 
 
             const request =
-                index.getAll(date);
+                transaction
+                    .objectStore(
+                        TASK_STORE
+                    )
+                    .index(
+                        "date"
+                    )
+                    .getAll(
+                        date
+                    );
 
 
             request.onsuccess =
                 function(event) {
 
                     resolve(
-                        event.target.result
+                        event.target.result || []
                     );
 
                 };
@@ -387,7 +742,7 @@ async function getAllTasksFromDatabase() {
 
 
     return new Promise(
-        (resolve, reject) => {
+        function(resolve, reject) {
 
             const transaction =
                 database.transaction(
@@ -396,21 +751,25 @@ async function getAllTasksFromDatabase() {
                 );
 
 
-            const store =
-                transaction.objectStore(
-                    TASK_STORE
-                );
+            attachTransactionHandlers(
+                transaction,
+                reject
+            );
 
 
             const request =
-                store.getAll();
+                transaction
+                    .objectStore(
+                        TASK_STORE
+                    )
+                    .getAll();
 
 
             request.onsuccess =
                 function(event) {
 
                     resolve(
-                        event.target.result
+                        event.target.result || []
                     );
 
                 };
@@ -442,7 +801,7 @@ async function updateTaskInDatabase(task) {
 
 
     return new Promise(
-        (resolve, reject) => {
+        function(resolve, reject) {
 
             const transaction =
                 database.transaction(
@@ -451,20 +810,28 @@ async function updateTaskInDatabase(task) {
                 );
 
 
-            const store =
-                transaction.objectStore(
-                    TASK_STORE
-                );
+            attachTransactionHandlers(
+                transaction,
+                reject
+            );
 
 
             const request =
-                store.put(task);
+                transaction
+                    .objectStore(
+                        TASK_STORE
+                    )
+                    .put(
+                        task
+                    );
 
 
             request.onsuccess =
                 function() {
 
-                    resolve(true);
+                    resolve(
+                        true
+                    );
 
                 };
 
@@ -495,7 +862,7 @@ async function deleteTaskFromDatabase(id) {
 
 
     return new Promise(
-        (resolve, reject) => {
+        function(resolve, reject) {
 
             const transaction =
                 database.transaction(
@@ -504,20 +871,28 @@ async function deleteTaskFromDatabase(id) {
                 );
 
 
-            const store =
-                transaction.objectStore(
-                    TASK_STORE
-                );
+            attachTransactionHandlers(
+                transaction,
+                reject
+            );
 
 
             const request =
-                store.delete(id);
+                transaction
+                    .objectStore(
+                        TASK_STORE
+                    )
+                    .delete(
+                        id
+                    );
 
 
             request.onsuccess =
                 function() {
 
-                    resolve(true);
+                    resolve(
+                        true
+                    );
 
                 };
 
@@ -548,7 +923,7 @@ async function deleteAllTasksFromDatabase() {
 
 
     return new Promise(
-        (resolve, reject) => {
+        function(resolve, reject) {
 
             const transaction =
                 database.transaction(
@@ -557,20 +932,26 @@ async function deleteAllTasksFromDatabase() {
                 );
 
 
-            const store =
-                transaction.objectStore(
-                    TASK_STORE
-                );
+            attachTransactionHandlers(
+                transaction,
+                reject
+            );
 
 
             const request =
-                store.clear();
+                transaction
+                    .objectStore(
+                        TASK_STORE
+                    )
+                    .clear();
 
 
             request.onsuccess =
                 function() {
 
-                    resolve(true);
+                    resolve(
+                        true
+                    );
 
                 };
 
@@ -601,7 +982,7 @@ async function addRecurringTaskToDatabase(task) {
 
 
     return new Promise(
-        (resolve, reject) => {
+        function(resolve, reject) {
 
             const transaction =
                 database.transaction(
@@ -610,14 +991,20 @@ async function addRecurringTaskToDatabase(task) {
                 );
 
 
-            const store =
-                transaction.objectStore(
-                    RECURRING_TASK_STORE
-                );
+            attachTransactionHandlers(
+                transaction,
+                reject
+            );
 
 
             const request =
-                store.add(task);
+                transaction
+                    .objectStore(
+                        RECURRING_TASK_STORE
+                    )
+                    .add(
+                        task
+                    );
 
 
             request.onsuccess =
@@ -656,7 +1043,7 @@ async function getAllRecurringTasksFromDatabase() {
 
 
     return new Promise(
-        (resolve, reject) => {
+        function(resolve, reject) {
 
             const transaction =
                 database.transaction(
@@ -665,21 +1052,88 @@ async function getAllRecurringTasksFromDatabase() {
                 );
 
 
-            const store =
-                transaction.objectStore(
-                    RECURRING_TASK_STORE
-                );
+            attachTransactionHandlers(
+                transaction,
+                reject
+            );
 
 
             const request =
-                store.getAll();
+                transaction
+                    .objectStore(
+                        RECURRING_TASK_STORE
+                    )
+                    .getAll();
 
 
             request.onsuccess =
                 function(event) {
 
                     resolve(
-                        event.target.result
+                        event.target.result || []
+                    );
+
+                };
+
+
+            request.onerror =
+                function(event) {
+
+                    reject(
+                        event.target.error
+                    );
+
+                };
+
+        }
+    );
+
+}
+
+
+// ============================================================
+// UPDATE RECURRING TASK
+// ============================================================
+
+async function updateRecurringTaskInDatabase(
+    task
+) {
+
+    const database =
+        await openDatabase();
+
+
+    return new Promise(
+        function(resolve, reject) {
+
+            const transaction =
+                database.transaction(
+                    RECURRING_TASK_STORE,
+                    "readwrite"
+                );
+
+
+            attachTransactionHandlers(
+                transaction,
+                reject
+            );
+
+
+            const request =
+                transaction
+                    .objectStore(
+                        RECURRING_TASK_STORE
+                    )
+                    .put(
+                        task
+                    );
+
+
+            request.onsuccess =
+                function() {
+
+                    resolve(
+                        true
                     );
 
                 };
@@ -704,14 +1158,16 @@ async function getAllRecurringTasksFromDatabase() {
 // DELETE RECURRING TASK
 // ============================================================
 
-async function deleteRecurringTaskFromDatabase(id) {
+async function deleteRecurringTaskFromDatabase(
+    id
+) {
 
     const database =
         await openDatabase();
 
 
     return new Promise(
-        (resolve, reject) => {
+        function(resolve, reject) {
 
             const transaction =
                 database.transaction(
@@ -720,25 +1176,140 @@ async function deleteRecurringTaskFromDatabase(id) {
                 );
 
 
+            attachTransactionHandlers(
+                transaction,
+                reject
+            );
+
+
+            const request =
+                transaction
+                    .objectStore(
+                        RECURRING_TASK_STORE
+                    )
+                    .delete(
+                        id
+                    );
+
+
+            request.onsuccess =
+                function() {
+
+                    resolve(
+                        true
+                    );
+
+                };
+
+
+            request.onerror =
+                function(event) {
+
+                    reject(
+                        event.target.error
+                    );
+
+                };
+
+        }
+    );
+
+}
+
+
+// ============================================================
+// DEACTIVATE RECURRING TASK
+// ============================================================
+
+async function deactivateRecurringTaskInDatabase(
+    id
+) {
+
+    const database =
+        await openDatabase();
+
+
+    return new Promise(
+        function(resolve, reject) {
+
+            const transaction =
+                database.transaction(
+                    RECURRING_TASK_STORE,
+                    "readwrite"
+                );
+
+
+            attachTransactionHandlers(
+                transaction,
+                reject
+            );
+
+
             const store =
                 transaction.objectStore(
                     RECURRING_TASK_STORE
                 );
 
 
-            const request =
-                store.delete(id);
+            const getRequest =
+                store.get(
+                    id
+                );
 
 
-            request.onsuccess =
-                function() {
+            getRequest.onsuccess =
+                function(event) {
 
-                    resolve(true);
+                    const recurringTask =
+                        event.target.result;
+
+
+                    if (!recurringTask) {
+
+                        reject(
+                            new Error(
+                                "Recurring task not found."
+                            )
+                        );
+
+                        return;
+
+                    }
+
+
+                    recurringTask.active =
+                        false;
+
+
+                    const putRequest =
+                        store.put(
+                            recurringTask
+                        );
+
+
+                    putRequest.onsuccess =
+                        function() {
+
+                            resolve(
+                                true
+                            );
+
+                        };
+
+
+                    putRequest.onerror =
+                        function(errorEvent) {
+
+                            reject(
+                                errorEvent.target.error
+                            );
+
+                        };
 
                 };
 
 
-            request.onerror =
+            getRequest.onerror =
                 function(event) {
 
                     reject(
